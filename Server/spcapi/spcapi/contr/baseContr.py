@@ -1,13 +1,11 @@
-from spcapi.model.dbcommon import dbcommon
+
 import requests
 
 class baseContro:
-    def __init__(self):
-        self.mdb = dbcommon()
-        pass
+    # def __init__(self):
+    #     self.mdb = dbcommon()
+    #     pass
 
-    def sendLost(self):
-        url = ''
-        data = {
-        }
-        requests.post(url=url, data=data)
+    def sendLost(self,data):
+        url = 'http://127.0.0.1:8081/index/hello'
+        requests.get(url=url, params=data)

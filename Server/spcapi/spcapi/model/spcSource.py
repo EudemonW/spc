@@ -1,6 +1,6 @@
 from time import time
 
-from spcapi.model.dbcommon import dbcommon
+from Server.spcapi.spcapi.model.dbcommon import dbcommon
 
 
 class spcSource(dbcommon):
@@ -26,6 +26,10 @@ class spcSource(dbcommon):
 
     def getList(self, no):
         SQL = "SELECT * FROM spc_source where device_no = {no}".format(no=no)
+        return self.mdb.readQuery(SQL)
+
+    def getDeviceNo(self):
+        SQL = "SELECT distinct device_no FROM spc_source"
         return self.mdb.readQuery(SQL)
 
     def getCount(self):

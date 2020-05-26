@@ -11,6 +11,8 @@ import numpy as np
 
 from spcapi.model.spctest import create
 
+from Server.spcapi.spcapi.model.dataProcess import sendBack
+
 
 class api():
     def __init__(self):
@@ -25,7 +27,12 @@ class api():
         create(df,no)
 
     def saveOriLost(request):
-        spcSource().saveOri(request.GET)
+        # spcSource().saveOri(request.GET)
+        no = spcSource().getDeviceNo()
+        for index, row in no.iterrows():
+            df = spcSource().getList(row['device_no'])
+            dlist = create(df, row['device_no'])
+            sendBack(dlist)
         req = {}
         req["code"] = 0
         req["msg"] = "save ok"
@@ -40,17 +47,18 @@ class api():
 
 
     def getDevice(request):
-        df = spcSource().getList(10001)
-        dlist = create(df, 10001)
+        no = request.GET["no"]
+        print(no)
+        df = spcSource().getList(no)
+        dlist = create(df, no)
         data = []
-        data_x = dataProcess(dlist,'R','R')
-        data_r = dataProcess(dlist, 'X', 'change_val')
-        data.append(data_x)
+        data_r = dataProcess(dlist, 'R', 'R')
+        data_x = dataProcess(dlist, 'X', 'change_val')
         data.append(data_r)
+        data.append(data_x)
         jsonData = json.dumps(data)
-        print(jsonData)
+        # print(jsonData)
         return HttpResponse(jsonData)
-
 
 
     def img(request):

@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import warnings
-from spcapi.model.spcSource import spcSource
+from Server.spcapi.spcapi.model.spcSource import spcSource
 
 warnings.filterwarnings("ignore")
 import matplotlib.pyplot as plt
@@ -344,7 +344,7 @@ def get_data(df, device_no):
         dir['LCL'] = LCL
         dir['center'] = center
         data.append(dir)
-
+    # print(data)
     return data
 
     # df1_prob1 = df1[df1['prob1'] == 1]
