@@ -285,6 +285,17 @@ def add_color(df,color):
     df.loc[df[df['prob7'] == 1].index, "color"] = "yellow"
     df.loc[df[df['prob8'] == 1].index, "color"] = "red"
 
+def add_img(df):
+    df["img"] = ''
+    df.loc[df[df['prob1'] == 1].index, "img"] = "<img src= './asserts/img/1.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob2'] == 1].index, "img"] = "<img src= './asserts/img/2.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob3'] == 1].index, "img"] = "<img src= './asserts/img/3.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob4'] == 1].index, "img"] = "<img src= './asserts/img/4.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob5'] == 1].index, "img"] = "<img src= './asserts/img/5.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob6'] == 1].index, "img"] = "<img src= './asserts/img/6.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob7'] == 1].index, "img"] = "<img src= './asserts/img/7.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob8'] == 1].index, "img"] = "<img src= './asserts/img/8.jpg'  style='width:20px;height:25px'>"
+
 def add_name(df,device_no,size_type):
     result = spcSource().getNameAndMethod(device_no,size_type)
     df['name'] = result['process_person']
@@ -333,9 +344,15 @@ def get_data(df, device_no):
         add_color(df_r,'black')
         add_color(df_x,'black')
 
+
+
         #增加姓名和处理措施
         add_name(df_r,device_no,size_type)
         add_name(df_x,device_no,size_type)
+
+        # 增加图片显示属性
+        add_img(df_r)
+        add_img(df_x)
 
         dir = {}
         dir['X'] = df_x

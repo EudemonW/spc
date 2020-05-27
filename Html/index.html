@@ -14,259 +14,279 @@
 </head>
 
 <body>
+<div>
+
+    设备编号：<input placeholder="请输入设备编号" id="a" type="text">
+    <input type="button" value="查询" onclick="huoqu()"/>
+
+</div>
 <div id="container">
-    <!--	<div id="container1" style="min-width:400px;height:500px"></div>-->
-    <!--	<div id="container2" style="min-width:400px;height:500px"></div>-->
+
 </div>
 
 <script>
-    $.get('spc/getDevice', function (data) {
-        var json = eval(data);
-        console.log(json[0].length);
-        Highcharts.setOptions({
-            // 所有语言文字相关配置都设置在 lang 里
-            lang: {
-                resetZoom: '重置',
-                resetZoomTitle: '重置缩放比例',
-                downloadPNG: '下载PNG',
-                downloadJPEG: '下载JPEG',
-                downloadPDF: '下载PDF',
-                downloadSVG: '下载SVG'
+    var device_no = null;
+
+    function huoqu() {
+        var no = document.getElementById('a').value;
+        $.get('spc/getDevice?no=' + no, function (data) {
+            var json = eval(data);
+            console.log(json[0].length);
+            Highcharts.setOptions({
+                // 所有语言文字相关配置都设置在 lang 里
+                lang: {
+                    resetZoom: '重置',
+                    resetZoomTitle: '重置缩放比例',
+                    downloadPNG: '下载PNG',
+                    downloadJPEG: '下载JPEG',
+                    downloadPDF: '下载PDF',
+                    downloadSVG: '下载SVG'
+                }
+            });
+            let html = "";
+            for (var i = 1; i <= json[0].length; i++) {
+                var str = "container";
+                tem = str + i;
+                temp = tem + "x";
+                html += "<div id=" + tem + " style=\"min-width:400px;height:500px\"></div>";
+                html += "<div id=" + temp + " style=\"min-width:400px;height:500px\"></div>";
+            }
+            $("#container").html(html);
+            for (var i = 1; i <= json[0].length; i++) {
+                var str = "container";
+                tem = str + i;
+                temp = tem + "x";
+                console.log(tem);
+                var j = i - 1
+                Highcharts.chart(tem, {
+                    chart: {
+                        type: 'line',
+                        zoomType: 'x',
+                        selectionMarkerFill: 'rgba(0,0,0, 0.2)',
+                        panning: true,
+                        panKey: 'ctrl',
+                        resetZoomButton: {
+                            // 按钮定位
+                            position: {
+                                align: 'right', // by default
+                                verticalAlign: 'top', // by default
+                                x: 0,
+                                y: -30
+                            },
+                            // 按钮样式
+                            theme: {
+                                fill: 'white',
+                                stroke: 'silver',
+                                r: 0,
+                                states: {
+                                    hover: {
+                                        fill: '#41739D',
+                                        style: {
+                                            color: 'white'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    title: {
+                        text: '设备编号：10001   尺寸类型：A  '
+                    },
+                    subtitle: {
+                        text: '移动极差'
+                    },
+                    xAxis: {
+                        //categories:
+                        categories: json[0][j].x,
+                        labels: {
+                            step: 10 //10就是x轴显示的间隔
+                        }
+                    },
+                    yAxis: {
+                        plotLines: [{
+                            color: 'red', //线的颜色，定义为红色
+                            dashStyle: 'Dash', //默认值，这里定义为实线
+                            value: json[0][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                            width: 2, //标示线的宽度，2px
+                            text: 'UCL'
+                        }, {
+                            color: 'red', //线的颜色，定义为红色
+                            dashStyle: 'Dash', //默认值，这里定义为实线
+                            value: json[0][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                            width: 2, //标示线的宽度，2px
+                            text: 'LCL'
+                        }, {
+                            color: 'blue', //线的颜色，定义为红色
+                            dashStyle: 'Dash', //默认值，这里定义为实线
+                            value: json[0][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                            width: 2, //标示线的宽度，2px
+                            text: '中心线'
+                        }],
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            //console.log(this)
+                            if (this.point.name == '') {
+                                this.point.name = ''
+                            }
+                            if (this.point.method == '') {
+                                this.point.method = ''
+                            }
+                            return '时间: ' + '<b>' + this.x + '</b>' + '<br/>' +
+                                this.series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
+                                '处理人: ' + '<b>' + this.point.name + '</b>' + '<br/>' +
+                                '处理措施: ' + '<b>' + this.point.method + '</b>';
+                        }
+                    },
+                    plotOptions: {
+                        line: {
+                            dataLabels: {
+                                // 开启数据标签
+                                enabled: true,
+                                useHTML: true,
+                                formatter: function () {
+                                    return this.point.img
+                                }
+                            },
+                            // 关闭鼠标跟踪，对应的提示框、点击事件会失效
+                            enableMouseTracking: true
+                        },
+                        spline: {
+                            marker: {
+                                radius: 4,
+                                lineColor: '#191970',
+                                lineWidth: 10
+                            }
+                        },
+                    },
+                    series: [{
+                        name: '移动极差',
+                        data: json[0][j].y
+                    }],
+                    credits: {
+                        enabled: false // 禁用版权显示信息
+                    }
+                });
+                Highcharts.chart(temp, {
+                    chart: {
+                        type: 'line',
+                        zoomType: 'x',
+                        selectionMarkerFill: 'rgba(0,0,0, 0.2)',
+                        panning: true,
+                        panKey: 'ctrl',
+                        resetZoomButton: {
+                            // 按钮定位
+                            position: {
+                                align: 'right', // by default
+                                verticalAlign: 'top', // by default
+                                x: 0,
+                                y: -30
+                            },
+                            // 按钮样式
+                            theme: {
+                                fill: 'white',
+                                stroke: 'silver',
+                                r: 0,
+                                states: {
+                                    hover: {
+                                        fill: '#41739D',
+                                        style: {
+                                            color: 'white'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    title: {
+                        text: '设备编号：10001   尺寸类型：B1   '
+                    },
+                    subtitle: {
+                        text: '单独值'
+                    },
+                    xAxis: {
+                        //categories:
+                        categories: json[1][j].x,
+                        labels: {
+                            step: 10 //10就是x轴显示的间隔
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: "单独值"
+                        },
+                        plotLines: [{
+                            color: 'red', //线的颜色，定义为红色
+                            dashStyle: 'Dash', //默认值，这里定义为实线
+                            value: json[1][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                            width: 2, //标示线的宽度，2px
+                            text: 'UCL'
+                        }, {
+                            color: 'red', //线的颜色，定义为红色
+                            dashStyle: 'Dash', //默认值，这里定义为实线
+                            value: json[1][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                            width: 2, //标示线的宽度，2px
+                            text: 'LCL'
+                        }, {
+                            color: 'blue', //线的颜色，定义为红色
+                            dashStyle: 'Dash', //默认值，这里定义为实线
+                            value: json[1][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                            width: 2, //标示线的宽度，2px
+                            text: '中心线'
+                        }],
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            //console.log(this)
+                            if (this.point.name == '') {
+                                this.point.name = '无'
+                            }
+                            if (this.point.method == '') {
+                                this.point.method = '无'
+                            }
+                            return '时间: ' + '<b>' + this.x + '</b>' + '<br/>' +
+                                this.series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
+                                '处理人: ' + '<b>' + this.point.name + '</b>' + '<br/>' +
+                                '处理措施: ' + '<b>' + this.point.method + '</b>';
+                        }
+                    },
+                    plotOptions: {
+                        line: {
+                            dataLabels: {
+                                // 开启数据标签
+                                enabled: true,
+                                useHTML: true,
+                                formatter: function () {
+                                    return this.point.img
+                                }
+                            },
+                            // 关闭鼠标跟踪，对应的提示框、点击事件会失效
+                            enableMouseTracking: true
+                        },
+                        spline: {
+                            marker: {
+                                radius: 4,
+                                lineColor: '#191970',
+                                lineWidth: 10
+                            }
+                        },
+                    },
+                    series: [{
+                        name: '单独值',
+                        data: json[1][j].y,
+                        marker: {
+                            symbol: 'circle'
+                        }
+                    }],
+                    credits: {
+                        enabled: false // 禁用版权显示信息
+                    }
+                });
             }
         });
-        let html = "";
-        for (var i = 1; i <= json[0].length; i++) {
-            var str = "container";
-            tem = str + i;
-            temp = tem + "x";
-            html += "<div id=" + tem + " style=\"min-width:400px;height:500px\"></div>";
-            html += "<div id=" + temp + " style=\"min-width:400px;height:500px\"></div>";
-        }
-        $("#container").html(html);
-        for (var i = 1; i <= json[0].length; i++) {
-            var str = "container";
-            tem = str + i;
-            temp = tem + "x";
-            console.log(tem);
-            var j = i - 1
-            Highcharts.chart(tem, {
-                chart: {
-                    type: 'line',
-                    zoomType: 'x',
-                    selectionMarkerFill: 'rgba(0,0,0, 0.2)',
-                    panning: true,
-                    panKey: 'ctrl',
-                    resetZoomButton: {
-                        // 按钮定位
-                        position: {
-                            align: 'right', // by default
-                            verticalAlign: 'top', // by default
-                            x: 0,
-                            y: -30
-                        },
-                        // 按钮样式
-                        theme: {
-                            fill: 'white',
-                            stroke: 'silver',
-                            r: 0,
-                            states: {
-                                hover: {
-                                    fill: '#41739D',
-                                    style: {
-                                        color: 'white'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                title: {
-                    text: '设备编号：10001   尺寸类型：A'
-                },
-                subtitle: {
-                    text: null
-                },
-                xAxis: {
-                    //categories:
-                    categories: json[0][j].x,
-                    labels: {
-                        step: 10 //10就是x轴显示的间隔
-                    }
-                },
-                yAxis: {
-                    plotLines: [{
-                        color: 'red', //线的颜色，定义为红色
-                        dashStyle: 'Dash', //默认值，这里定义为实线
-                        value: json[0][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                        width: 2, //标示线的宽度，2px
-                        text: 'UCL'
-                    }, {
-                        color: 'red', //线的颜色，定义为红色
-                        dashStyle: 'Dash', //默认值，这里定义为实线
-                        value: json[0][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                        width: 2, //标示线的宽度，2px
-                        text: 'LCL'
-                    }, {
-                        color: 'blue', //线的颜色，定义为红色
-                        dashStyle: 'Dash', //默认值，这里定义为实线
-                        value: json[0][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                        width: 2, //标示线的宽度，2px
-                        text: '中心线'
-                    }],
-                },
-                tooltip: {
-                    formatter: function () {
-                        //console.log(this)
-                        if (this.point.name == '') {
-                            this.point.name = '无'
-                        }
-                        if (this.point.method == '') {
-                            this.point.method = '无'
-                        }
-                        return '时间:' + this.x + '<br/>' +
-                            this.series.name + ':' + this.y + '<br/>' +
-                            '处理人:' + this.point.name + '<br/>' +
-                            '处理措施:' + this.point.method;
-                    }
-                },
-                plotOptions: {
-                    line: {
-                        dataLabels: {
-                            // 开启数据标签
-                            enabled: false,
-                        },
-                        // 关闭鼠标跟踪，对应的提示框、点击事件会失效
-                        enableMouseTracking: true
-                    },
-                    spline: {
-                        marker: {
-                            radius: 4,
-                            lineColor: '#191970',
-                            lineWidth: 10
-                        }
-                    },
-                },
-                series: [{
-                    name: '移动极差R',
-                    data: json[0][j].y
-                }],
-                credits: {
-                    enabled: false // 禁用版权显示信息
-                }
-            });
-            Highcharts.chart(temp, {
-                chart: {
-                    type: 'line',
-                    zoomType: 'x',
-                    selectionMarkerFill: 'rgba(0,0,0, 0.2)',
-                    panning: true,
-                    panKey: 'ctrl',
-                    resetZoomButton: {
-                        // 按钮定位
-                        position: {
-                            align: 'right', // by default
-                            verticalAlign: 'top', // by default
-                            x: 0,
-                            y: -30
-                        },
-                        // 按钮样式
-                        theme: {
-                            fill: 'white',
-                            stroke: 'silver',
-                            r: 0,
-                            states: {
-                                hover: {
-                                    fill: '#41739D',
-                                    style: {
-                                        color: 'white'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                title: {
-                    text: '设备编号：10001   尺寸类型：B1'
-                },
-                subtitle: {
-                    text: null
-                },
-                xAxis: {
-                    //categories:
-                    categories: json[1][j].x,
-                    labels: {
-                        step: 10 //10就是x轴显示的间隔
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: "转换值"
-                    },
-                    plotLines: [{
-                        color: 'red', //线的颜色，定义为红色
-                        dashStyle: 'Dash', //默认值，这里定义为实线
-                        value: json[1][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                        width: 2, //标示线的宽度，2px
-                        text: 'UCL'
-                    }, {
-                        color: 'red', //线的颜色，定义为红色
-                        dashStyle: 'Dash', //默认值，这里定义为实线
-                        value: json[1][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                        width: 2, //标示线的宽度，2px
-                        text: 'LCL'
-                    }, {
-                        color: 'blue', //线的颜色，定义为红色
-                        dashStyle: 'Dash', //默认值，这里定义为实线
-                        value: json[1][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                        width: 2, //标示线的宽度，2px
-                        text: '中心线'
-                    }],
-                },
-                tooltip: {
-                    formatter: function () {
-                        //console.log(this)
-                        if (this.point.name == '') {
-                            this.point.name = '无'
-                        }
-                        if (this.point.method == '') {
-                            this.point.method = '无'
-                        }
-                        return '时间:' + this.x + '<br/>' +
-                            this.series.name + ':' + this.y + '<br/>' +
-                            '处理人:' + this.point.name + '<br/>' +
-                            '处理措施:' + this.point.method;
-                    }
-                },
-                plotOptions: {
-                    line: {
-                        dataLabels: {
-                            // 开启数据标签
-                            enabled: false,
-                        },
-                        // 关闭鼠标跟踪，对应的提示框、点击事件会失效
-                        enableMouseTracking: true
-                    },
-                    spline: {
-                        marker: {
-                            radius: 4,
-                            lineColor: '#191970',
-                            lineWidth: 10
-                        }
-                    },
-                },
-                series: [{
-                    name: '转换值X',
-                    data: json[1][j].y,
-                    marker: {
-                        symbol: 'circle'
-                    }
-                }],
-                credits: {
-                    enabled: false // 禁用版权显示信息
-                }
-            });
-        }
-    });
+    }
+
+
 
     // });
 </script>

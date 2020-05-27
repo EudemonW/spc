@@ -16,6 +16,7 @@ def dataProcess(dlist,R_X,value):
             temp1 = {}
             temp1['y'] = getattr(item, value)
             temp1['color'] = getattr(item, 'color')
+            temp1['img'] = getattr(item, 'img')
             temp1['name'] = getattr(item, 'name')
             temp1['method'] = getattr(item, 'method')
             df1.append(temp1)
@@ -52,7 +53,7 @@ def send(df):
             "pro7": row["prob7"],
             "pro8": row["prob8"],
         }
-        print(data)
+        # print(data)
         baseContro().sendLost(data)
 
 def sendBack(dlist):

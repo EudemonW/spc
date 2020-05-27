@@ -48,7 +48,7 @@ class api():
 
     def getDevice(request):
         no = request.GET["no"]
-        print(no)
+        # print(no)
         df = spcSource().getList(no)
         dlist = create(df, no)
         data = []
