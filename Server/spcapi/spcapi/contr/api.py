@@ -52,8 +52,8 @@ class api():
         df = spcSource().getList(no)
         dlist = create(df, no)
         data = []
-        data_r = dataProcess(dlist, 'R', 'R')
-        data_x = dataProcess(dlist, 'X', 'change_val')
+        data_r = dataProcess(dlist, 'R', 'R','R_UCL','R_LCL','R_center')
+        data_x = dataProcess(dlist, 'X', 'change_val','UCL','LCL','center')
         data.append(data_r)
         data.append(data_x)
         jsonData = json.dumps(data)

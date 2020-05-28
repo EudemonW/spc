@@ -5,7 +5,7 @@ import pandas as pd
 from Server.spcapi.spcapi.contr.baseContr import baseContro
 
 
-def dataProcess(dlist,R_X,value):
+def dataProcess(dlist,R_X,value,ucl,lcl,center):
     # 取出X
     # df = pd.DataFrame(dlist[0][temp])
     temp_all = []
@@ -25,9 +25,10 @@ def dataProcess(dlist,R_X,value):
         temp = {}
         temp['y'] = df1
         temp['x'] = df2
-        temp['UCL'] = ite['UCL']
-        temp['LCL'] = ite['LCL']
-        temp['center'] = ite['center']
+        temp['UCL'] = ite[ucl]
+        temp['LCL'] = ite[lcl]
+        temp['center'] = ite[center]
+        temp['size'] = ite['size_type']
         temp_all.append(temp)
     return temp_all
 

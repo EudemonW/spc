@@ -330,9 +330,12 @@ def get_data(df, device_no):
         UCL = result['control_up'][0]
         LCL = result['control_down'][0]
         center = result['control_center'][0]
+        R_UCL = result['r_contro_up'][0]
+        R_LCL = result['r_contro_down'][0]
+        R_center = result['r_contro_center'][0]
 
         # 故障类型判断
-        prob_demo_r = prob_detection(df1, "R", "index", UCL, LCL, center)  # 移动极差
+        prob_demo_r = prob_detection(df1, "R", "index", R_UCL, R_LCL, R_center)  # 移动极差
         prob_demo_x = prob_detection(df2, "change_val", "index", UCL, LCL, center)  # 转换值
         prob_columns(df1, prob_demo_r)
         prob_columns(df2, prob_demo_x)
@@ -343,8 +346,6 @@ def get_data(df, device_no):
         # 增加颜色属性
         add_color(df_r,'black')
         add_color(df_x,'black')
-
-
 
         #增加姓名和处理措施
         add_name(df_r,device_no,size_type)
@@ -360,6 +361,10 @@ def get_data(df, device_no):
         dir['UCL'] = UCL
         dir['LCL'] = LCL
         dir['center'] = center
+        dir['R_UCL'] = R_UCL
+        dir['R_LCL'] = R_LCL
+        dir['R_center'] = R_center
+        dir['size_type'] = size_type
         data.append(dir)
     # print(data)
     return data
