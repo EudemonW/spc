@@ -1,6 +1,6 @@
 from time import time
 
-from Server.spcapi.spcapi.model.dbcommon import dbcommon
+from spcapi.model.dbcommon import dbcommon
 
 
 class spcSource(dbcommon):

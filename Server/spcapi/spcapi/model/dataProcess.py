@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from Server.spcapi.spcapi.contr.baseContr import baseContro
+from spcapi.contr.baseContr import baseContro
 
 
 def dataProcess(dlist,R_X,value,ucl,lcl,center):

@@ -11,7 +11,7 @@ import numpy as np
 
 from spcapi.model.spctest import create
 
-from Server.spcapi.spcapi.model.dataProcess import sendBack
+from spcapi.model.dataProcess import sendBack
 
 
 class api():
