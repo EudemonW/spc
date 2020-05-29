@@ -14,6 +14,7 @@
 </head>
 
 <body>
+<h1 style="text-align: center;">过程检测数据管理</h1>
 <div>
 
     设备编号：<input placeholder="请输入设备编号" id="a" type="text">
@@ -113,7 +114,7 @@
                                 color: 'red', //线的颜色，定义为红色
                                 dashStyle: 'solid', //默认值，这里定义为实线
                                 value: json[0][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1, //标示线的宽度，2px
+                                width: 1.5, //标示线的宽度，2px
                                 label: {
                                     text: 'UCL',     //标签的内容
                                     align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
@@ -123,7 +124,7 @@
                                 color: 'red', //线的颜色，定义为红色
                                 dashStyle: 'solid', //默认值，这里定义为实线
                                 value: json[0][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1, //标示线的宽度，2px
+                                width: 1.5, //标示线的宽度，2px
                                 label: {
                                     text: 'LCL',     //标签的内容
                                     align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
@@ -133,7 +134,7 @@
                                 color: 'blue', //线的颜色，定义为红色
                                 dashStyle: 'solid', //默认值，这里定义为实线
                                 value: json[0][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1, //标示线的宽度，2px
+                                width: 1.5, //标示线的宽度，2px
                                 label: {
                                     text: '中心线',     //标签的内容
                                     align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
@@ -197,7 +198,8 @@
                         },
                         series: [{
                             name: '移动极差',
-                            data: json[0][j].y
+                            data: json[0][j].y,
+                            lineWidth: 0.5,
                         }],
                         credits: {
                             enabled: false // 禁用版权显示信息
@@ -255,7 +257,7 @@
                                 color: 'red', //线的颜色，定义为红色
                                 dashStyle: 'solid', //默认值，这里定义为实线
                                 value: json[1][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1, //标示线的宽度，2px
+                                width: 1.5, //标示线的宽度，2px
                                 label: {
                                     text: 'UCL',     //标签的内容
                                     align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
@@ -265,7 +267,7 @@
                                 color: 'red', //线的颜色，定义为红色
                                 dashStyle: 'solid', //默认值，这里定义为实线
                                 value: json[1][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1, //标示线的宽度，2px
+                                width: 1.5, //标示线的宽度，2px
                                 label: {
                                     text: 'LCL',     //标签的内容
                                     align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
@@ -275,7 +277,7 @@
                                 color: 'blue', //线的颜色，定义为红色
                                 dashStyle: 'solid', //默认值，这里定义为实线
                                 value: json[1][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1, //标示线的宽度，2px
+                                width: 1.5, //标示线的宽度，2px
                                 label: {
                                     text: '中心线',     //标签的内容
                                     align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
@@ -352,6 +354,7 @@
                         series: [{
                             name: '单独值',
                             data: json[1][j].y,
+                            lineWidth: 0.5,
                             marker: {
                                 symbol: 'circle'
                             }
