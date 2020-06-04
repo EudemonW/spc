@@ -57,7 +57,7 @@ class api():
         data.append(data_r)
         data.append(data_x)
         jsonData = json.dumps(data)
-        # print(jsonData)
+        print(jsonData)
         return HttpResponse(jsonData)
 
 

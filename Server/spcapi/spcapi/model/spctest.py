@@ -16,10 +16,11 @@ plt.rcParams['axes.unicode_minus'] = False  # 解决负号不显示的问题
 
 
 def create(df, device_no):
-    df['timestamp'] = df['timestamp'].map(lambda x: str(datetime.datetime.fromtimestamp(x)))  # 将时间戳转换为datetime库的时间
+    # df['timestamp'] = df['timestamp'].map(lambda x: str(datetime.datetime.fromtimestamp(x)))  # 将时间戳转换为datetime库的时间
     # df['timestamp'] = df['timestamp'].map(
     #     lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))  # 将时间转换为strptime格式
     # df['timestamp'] = df['timestamp'].map(lambda x: mdates.date2num(x))
+    df['timestamp'] = df['timestamp']*1000
     df['change_val_shift'] = df['change_val'].shift(1)
     df['R'] = df['change_val_shift'] - df['change_val']
     df['R'] = df['R'].map(lambda x: np.abs(x))

@@ -14,17 +14,24 @@ def dataProcess(dlist,R_X,value,ucl,lcl,center):
         df1 = []
         for item in df.itertuples():
             temp1 = {}
+            # df2=[]
+            temp1['x'] = getattr(item, 'timestamp')
             temp1['y'] = getattr(item, value)
             temp1['color'] = getattr(item, 'color')
             temp1['img'] = getattr(item, 'img')
             temp1['name'] = getattr(item, 'name')
             temp1['method'] = getattr(item, 'method')
             df1.append(temp1)
-        df2 = df['timestamp'].values
-        df2 = df2.tolist()
+            # df2.append(getattr(item, value))
+            # df2.append(getattr(item, 'timestamp'))
+
+            # df2.append(temp1)
+            # df1.append(df2)
+        # df2 = df['timestamp'].values*1000
+        # df2 = df2.tolist()
         temp = {}
-        temp['y'] = df1
-        temp['x'] = df2
+        temp['data'] = df1
+        # temp['x'] = df2
         temp['UCL'] = ite[ucl]
         temp['LCL'] = ite[lcl]
         temp['center'] = ite[center]

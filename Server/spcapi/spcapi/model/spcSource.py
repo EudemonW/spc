@@ -38,7 +38,7 @@ class spcSource(dbcommon):
 
     def getUpAndDown(self, device_no, size_type):
         SQL = "SELECT control_up,control_center,control_down,r_contro_up,r_contro_down,r_contro_center FROM spc_source where device_no='{device_no}' " \
-              "and size_type = '{size_type}' and timestamp = (select MAX(timestamp) from spc_source)".format(
+              "and size_type = '{size_type}' and timestamp = (select MAX(timestamp) from spc_source where device_no='{device_no}' and size_type = '{size_type}')".format(
             device_no=device_no, size_type=size_type)
         return self.mdb.readQuery(SQL)
 
