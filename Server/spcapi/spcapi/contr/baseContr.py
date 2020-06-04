@@ -7,5 +7,5 @@ class baseContro:
     #     pass
 
     def sendLost(self,data):
-        url = 'http://127.0.0.1:8081/index/hello'
+        url = 'http://172.18.23.154:9081/erp3/getExceptionInfo'
         requests.get(url=url, params=data)

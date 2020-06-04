@@ -18,16 +18,10 @@ class api():
     def __init__(self):
         self.mdb = dbcommon()
 
-
         pass
 
-    def hello(request):
-        no = 10001
-        df = spcSource().getList(no)
-        create(df,no)
-
     def saveOriLost(request):
-        # spcSource().saveOri(request.GET)
+        spcSource().saveOri(request.GET)
         no = spcSource().getDeviceNo()
         for index, row in no.iterrows():
             df = spcSource().getList(row['device_no'])
@@ -61,11 +55,4 @@ class api():
         return HttpResponse(jsonData)
 
 
-    def img(request):
-        no = request.GET["no"]
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        path = base_dir+"/static/{no}.png".format(no=no)
-        if os.path.exists(path):
-            image_data = open(base_dir+"/static/{no}.png".format(no=no), "rb").read()
-            return HttpResponse(image_data, content_type="image/png")
-        return HttpResponse("can not find device")
+

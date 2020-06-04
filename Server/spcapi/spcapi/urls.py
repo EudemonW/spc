@@ -23,5 +23,4 @@ urlpatterns = [
     path('spc/saveOriLost', api.saveOriLost),
     path('spc/saveUpdLost', api.saveUpdLost),
     path('spc/getDevice', api.getDevice),
-    path('spc/getImg', api.img)
 ]
