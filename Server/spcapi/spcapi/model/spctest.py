@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import warnings
-from spcapi.model.spcSource import spcSource
+from Server.spcapi.spcapi.model.spcSource import spcSource
 
 warnings.filterwarnings("ignore")
 import matplotlib.pyplot as plt
@@ -277,13 +277,13 @@ def prob_columns(df, R_prob):  # 将问题类型添加到原表后面
 
 def add_color(df,color):
     df["color"] = color
-    df.loc[df[df['prob1'] == 1].index, "color"] = "red"
     df.loc[df[df['prob2'] == 1].index, "color"] = "green"
+    df.loc[df[df['prob7'] == 1].index, "color"] = "yellow"
+    df.loc[df[df['prob1'] == 1].index, "color"] = "red"
     df.loc[df[df['prob3'] == 1].index, "color"] = "red"
     df.loc[df[df['prob4'] == 1].index, "color"] = "red"
     df.loc[df[df['prob5'] == 1].index, "color"] = "red"
     df.loc[df[df['prob6'] == 1].index, "color"] = "red"
-    df.loc[df[df['prob7'] == 1].index, "color"] = "yellow"
     df.loc[df[df['prob8'] == 1].index, "color"] = "red"
 
 def add_img(df):

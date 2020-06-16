@@ -1,8 +1,12 @@
+import json
 from datetime import datetime
 
 import pandas as pd
 
-from spcapi.contr.baseContr import baseContro
+from Server.spcapi.spcapi.contr.baseContr import baseContro
+
+from Server.spcapi.spcapi.model.spcSource import spcSource
+from Server.spcapi.spcapi.model.spctest import create
 
 
 def dataProcess(dlist,R_X,value,ucl,lcl,center):
@@ -90,3 +94,19 @@ def sendBack(dlist):
                 df_r['prob5'] == 1) | (df_r['prob6'] == 1) | (df_r['prob7'] == 1) | (df_r['prob8'] == 1)]
         send(df_x_back)
         send(df_r_back)
+
+def dataCompute():
+    no = spcSource().getDeviceNo()
+    for index, row in no.iterrows():
+        df = spcSource().getList(row['device_no'])
+        dlist = create(df, row['device_no'])
+        data = []
+        data_r = dataProcess(dlist, 'R', 'R', 'R_UCL', 'R_LCL', 'R_center')
+        data_x = dataProcess(dlist, 'X', 'change_val', 'UCL', 'LCL', 'center')
+        data.append(data_r)
+        data.append(data_x)
+        jsonData = json.dumps(data)
+        f = open(r"../spcapi/static/device/{no}.txt".format(no=row['device_no']), "w")
+        f.write(jsonData)
+        f.close()
+        sendBack(dlist)

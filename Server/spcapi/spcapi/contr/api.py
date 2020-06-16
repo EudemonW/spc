@@ -1,17 +1,13 @@
 import os
 
+from django.core import serializers
 from django.http import HttpResponse
-
-from spcapi.model.dataProcess import dataProcess
 from spcapi.model.dbcommon import dbcommon
-import pandas as pd
 from spcapi.model.spcSource import spcSource
 import json
-import numpy as np
-
-from spcapi.model.spctest import create
-
-from spcapi.model.dataProcess import sendBack
+import threading
+from Server.spcapi.spcapi.model.dataProcess import dataCompute, dataProcess
+from Server.spcapi.spcapi.model.spctest import create
 
 
 class api():
@@ -21,38 +17,59 @@ class api():
         pass
 
     def saveOriLost(request):
-        spcSource().saveOri(request.GET)
-        no = spcSource().getDeviceNo()
-        for index, row in no.iterrows():
-            df = spcSource().getList(row['device_no'])
-            dlist = create(df, row['device_no'])
-            sendBack(dlist)
         req = {}
-        req["code"] = 0
-        req["msg"] = "save ok"
+        try:
+            spcSource().saveOri(request.GET)
+            t = threading.Thread(target=dataCompute)
+            t.start()
+            req["code"] = 0
+            req["msg"] = "save ok"
+        except Exception as ex:
+            print(ex)
+            req["code"] = False
+            req["msg"] = "save failure"
         return HttpResponse(json.dumps(req))
 
     def saveUpdLost(request):
-        spcSource().saveUpd(request.GET)
         req = {}
-        req["code"] = 0
-        req["msg"] = "update ok"
+        try:
+            spcSource().saveUpd(request.GET)
+            req["code"] = 0
+            req["msg"] = "update ok"
+        except Exception as ex:
+            print(ex)
+            req["code"] = False
+            req["msg"] = "save failure"
         return HttpResponse(json.dumps(req))
 
-
     def getDevice(request):
-        no = request.GET["no"]
-        # print(no)
-        df = spcSource().getList(no)
-        dlist = create(df, no)
-        data = []
-        data_r = dataProcess(dlist, 'R', 'R','R_UCL','R_LCL','R_center')
-        data_x = dataProcess(dlist, 'X', 'change_val','UCL','LCL','center')
-        data.append(data_r)
-        data.append(data_x)
-        jsonData = json.dumps(data)
-        print(jsonData)
-        return HttpResponse(jsonData)
-
-
-
+        no = str(request.GET["no"])
+        print(no)
+        result = {}
+        jsonData = []
+        try:
+            path = r"../spcapi/static/device/{no}.txt".format(no=no)
+            f = open(path, "r")
+            jsonData = f.read()
+            result["success"] = True
+            result["data"] = jsonData
+            f.close()
+        except:
+            df = spcSource().getList(no)
+            if (df.shape[0] == 0):
+                result["success"] = False
+                result["msg"] = "输入编号有误，请重新输入"
+            else:
+                dlist = create(df, no)
+                data = []
+                data_r = dataProcess(dlist, 'R', 'R', 'R_UCL', 'R_LCL', 'R_center')
+                data_x = dataProcess(dlist, 'X', 'change_val', 'UCL', 'LCL', 'center')
+                data.append(data_r)
+                data.append(data_x)
+                jsonData = json.dumps(data)
+                f = open(r"../spcapi/static/device/{no}.txt".format(no=no), "w")
+                f.write(jsonData)
+                f.close()
+                result["success"] = True
+                result["data"] = jsonData
+        return HttpResponse(json.dumps(result))

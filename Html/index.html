@@ -5,553 +5,595 @@
     <meta charset="utf-8">
     <link rel="icon" href="./asserts/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="/asserts/jquery.min.js"></script>
-    <script src="/asserts/code/highstock.js"></script>
-    <script src="/asserts/code/modules/exporting.js"></script>
+    <script src="./asserts/jquery.min.js"></script>
+    <script src="./asserts/code/highstock.js"></script>
+    <script src="./asserts/code/modules/exporting.js"></script>
+    <link rel="stylesheet" type="text/css" href="./asserts/sweetalert.css">
+    <script src="./asserts/sweetalert-dev.js"></script>
+    <style>
+        .table-cell {
+            margin-left: 50%;
+            margin-top: 10%;
+        }
+
+        img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .highcharts-tooltip span {
+            background-color: white;
+            z-index: 9999;
+        }
+    </style>
 </head>
 
 <body>
 <h1 style="text-align: center;">过程检测数据管理</h1>
-<div>
 
-    设备编号：<input placeholder="请输入设备编号" id="a" type="text">
-    <input type="button" value="查询" onclick="huoqu()"/>
-
-</div>
 <div id="container">
-
+    <img src="asserts/img/1.gif" v-show="isShow" class="table-cell">
 </div>
 
+<!--引入vue和axios文件-->
+<script src="./asserts/vue.js"></script>
+<script src="./asserts/axios.min.js"></script>
 <script>
-    $('#a').bind('keypress', function (event) {
-        if (event.keyCode == "13") {
-            huoqu();
+    const app = new Vue({
+        el: "#container",
+        data: {
+            no: "",
+            isShow: true
+        },
+        methods: {
+            GetQueryValue1(queryName) {
+                var reg = new RegExp("(^|&)" + queryName + "=([^&]*)(&|$)", "i");
+                var r = window.location.search.substr(1).match(reg);
+                // alert(reg);
+                if (r != null) {
+                    return decodeURI(r[2]);
+                } else {
+                    return null;
+                }
+            }
+        },
+        created() {
+            this.no = this.GetQueryValue1("no");
+            if (this.no == null||this.no == '') {
+                swal("请输入设备编号");
+                this.isShow = false;
+            } else {
+                axios.get(`spc/getDevice?no=${this.no}`).then(res => {
+                    // console.log(res);
+                    if (res.data.success) {
+                        let json = eval(res.data.data);
+                        // console.log(json);
+                        Highcharts.setOptions({
+                            // 所有语言文字相关配置都设置在 lang 里
+                            lang: {
+                                resetZoom: '恢复缩放',
+                                resetZoomTitle: '重置缩放比例',
+                                downloadPNG: '下载PNG文件',
+                                downloadJPEG: '下载JPE图片',
+                                downloadPDF: '下载PDF文件',
+                                downloadSVG: '下载SVG文件',
+                                loading: "加载中",
+                                rangeSelectorZoom: '<b>周期范围选择</b>',
+                                rangeSelectorFrom: "开始日期",
+                                rangeSelectorTo: "截止日期"
+                            }
+                        });
+                        let html = "";
+                        for (var i = 1; i <= json[0].length; i++) {
+                            var str = "container";
+                            tem = str + i;
+                            temp = tem + "x";
+                            html += "<div id=" + tem + " style=\'min-width:400px;height:650px\'></div><br><br>";
+                            html += "<div id=" + temp + " style=\'min-width:400px;height:650px\'></div><br><br>";
+                        }
+                        $("#container").html(html);
+                        for (var i = 1; i <= json[0].length; i++) {
+                            var str = "container";
+                            tem = str + i;
+                            temp = tem + "x";
+                            console.log(tem);
+                            var j = i - 1;
+                            var sigma_r = (json[0][j].UCL - json[0][j].center) / 3;
+                            var sigma_x = (json[1][j].UCL - json[1][j].LCL) / 6;
+                            Highcharts.stockChart(tem, {
+                                chart: {
+                                    zoomType: 'x',
+                                    selectionMarkerFill: 'rgba(0,0,0,0.2)',
+                                    panning: true,
+                                    panKey: 'ctrl',
+                                    resetZoomButton: {
+                                        // 按钮定位
+                                        position: {
+                                            align: 'right', // by default
+                                            verticalAlign: 'top', // by default
+                                            x: 0,
+                                            y: -30
+                                        },
+                                        // 按钮样式
+                                        theme: {
+                                            fill: 'white',
+                                            stroke: 'silver',
+                                            r: 0,
+                                            states: {
+                                                hover: {
+                                                    fill: '#41739D',
+                                                    style: {
+                                                        color: 'white'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                rangeSelector: {
+                                    buttons: [{
+                                        type: 'day',
+                                        count: 7,
+                                        text: '周'
+                                    }, {
+                                        type: 'month',
+                                        count: 1,
+                                        text: '月'
+                                    }, {
+                                        type: 'month',
+                                        count: 3,
+                                        text: '季度'
+                                    }, {
+                                        type: 'all',
+                                        text: '所有'
+                                    }],
+                                    selected: 3, // 默认选中的范围，值为上面 buttons 数组的下标（从 0 开始）
+                                    inputDateFormat: '%Y-%m-%d',
+                                    inputEditDateFormat: '%Y-%m-%d',
+                                },
+                                title: {
+                                    text: '<b>设备编号：' + this.no + '  尺寸类型：' + json[0][j].size + '  移动极差</b>'
+                                },
+                                subtitle: {
+                                    text: null
+                                },
+                                xAxis: {
+                                    labels: {
+                                        format: '{value:%Y-%m-%d }',
+                                        /*
+                                         * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
+                                         * %Y  年回
+                                         * %m  月答
+                                         * %d  日
+                                         * %H  时
+                                         * %M  分
+                                         * %S  秒
+                                         */
+                                        /*  /*
+                                         formatter: function() {
+                                             return Highcharts.dateFormat('%Y-%m-%d', this.value);
+                                         }
+                                         * / */
+                                    }
+                                },
+                                yAxis: {
+                                    plotLines: [{
+                                        color: 'red', //线的颜色，定义为红色
+                                        dashStyle: 'solid', //默认值，这里定义为实线
+                                        value: json[0][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                        width: 1.5, //标示线的宽度，2px
+                                        label: {
+                                            text: 'UCL',     //标签的内容
+                                            align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
+                                            x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+                                        }
+                                    }, {
+                                        color: 'red', //线的颜色，定义为红色
+                                        dashStyle: 'solid', //默认值，这里定义为实线
+                                        value: json[0][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                        width: 1.5, //标示线的宽度，2px
+                                        label: {
+                                            text: 'LCL',     //标签的内容
+                                            align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
+                                            x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+                                        }
+                                    }, {
+                                        color: 'blue', //线的颜色，定义为红色
+                                        dashStyle: 'solid', //默认值，这里定义为实线
+                                        value: json[0][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                        width: 1.5, //标示线的宽度，2px
+                                        label: {
+                                            text: '中心线',     //标签的内容
+                                            align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
+                                            x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+                                        }
+                                    },
+                                        {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[0][j].UCL - sigma_r * 1, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        },
+                                        {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[0][j].UCL - sigma_r * 2, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        },
+                                        {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[0][j].UCL - sigma_r * 4, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        }],
+                                },
+                                tooltip: {
+                                    padding: 1,
+                                    useHTML: true,
+                                    backgroundColor: 'rgba(247,247,247,10)',
+                                    formatter: function () {
+                                        // console.log(this);
+                                        function timestampToTime(timestamp) {
+                                            var date = new Date(timestamp); //时间戳为10位需*1000，时间戳为13位的话不需乘1000
+                                            var Y = date.getFullYear() + '-';
+                                            var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date
+                                                .getMonth() + 1) + '-';
+                                            var D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
+                                            var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
+                                            var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) +
+                                                ':';
+                                            var s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
+                                            return Y + M + D + h + m + s;
+                                        }
+
+                                        let name = '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>';
+                                        if (this.points[0].point.name == '') {
+                                            name = '';
+                                        }
+                                        let method = '处理人: ' + '<b>' + this.points[0].point.method + '</b>';
+                                        if (this.points[0].point.method == '') {
+                                            method = '';
+                                        }
+
+                                        return '<div class="tooltip">' + '<span>' + '时间: ' + '<b>' + timestampToTime(this.x) + '</b>' + '<br/>' +
+                                            this.points[0].series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
+                                            '图号: ' + '<b>' + this.points[0].point.part_no + '</b>' + '<br/>' +
+                                            '质量编号: ' + '<b>' + this.points[0].point.lot_no + '</b>' + '<br/>' +
+                                            '尺寸: ' + '<b>' + this.points[0].point.theory_val + '</b>' + '<br/>' +
+                                            '程序留余量: ' + '<b>' + this.points[0].point.p_left + '</b>' + '<br/>' +
+                                            '实测值: ' + '<b>' + this.points[0].point.measured_val + '</b>' + '<br/>' +
+                                            '操作者工号: ' + '<b>' + this.points[0].point.work_name + '</b>' + '<br/>' +
+                                            '测量时间: ' + '<b>' + this.points[0].point.measure_time + '</b>' + '<br/>' +
+                                            '加工z向补偿值: ' + '<b>' + this.points[0].point.z_compensate + '</b>' + '<br/>' +
+                                            '填写单位: ' + '<b>' + this.points[0].point.manufacturer + '</b>' + '<br/>' +
+                                            '件号: ' + '<b>' + this.points[0].point.part_no_number + '</b>' + '<br/>' +
+                                            '序号: ' + '<b>' + this.points[0].point.spec_no + '</b>' + '<br/>' +
+                                            '工艺员: ' + '<b>' + this.points[0].point.tech_oper + '</b>' + '<br/>' +
+                                            '工序号: ' + '<b>' + this.points[0].point.op_no + '</b>' + '<br/>' +
+                                            '公差带: ' + '<b>' + this.points[0].point.gcd + '</b>' + '<br/>' +
+                                            '材料: ' + '<b>' + this.points[0].point.material + '</b>' + '<br/>' +
+                                            name + method + '</span>' + '</div>';
+                                    }
+                                },
+                                plotOptions: {
+                                    line: {
+                                        dataLabels: {
+                                            // 开启数据标签
+                                            enabled: true,
+                                            useHTML: true,
+                                            zIndex: -1,
+                                            backgroundColor: 'rgba(252, 255, 197, 10)',
+                                            formatter: function () {
+                                                return this.point.img
+                                            }
+                                        },
+                                        // 关闭鼠标跟踪，对应的提示框、点击事件会失效
+                                        enableMouseTracking: true
+                                    },
+                                    spline: {
+                                        marker: {
+                                            radius: 4,
+                                            lineColor: '#191970',
+                                            lineWidth: 10
+                                        }
+                                    },
+                                    series: {
+                                        marker: {
+                                            radius: 3,
+                                            enabled: true
+                                        }
+                                    }
+                                },
+                                series: [{
+                                    name: '移动极差R',
+                                    data: json[0][j].data,
+                                    lineWidth: 0.5,
+                                    marker: {
+                                        symbol: 'circle'
+                                    }
+                                }],
+                                credits: {
+                                    enabled: false // 禁用版权显示信息
+                                },
+                                navigator: {
+                                    xAxis: {
+                                        labels: {
+                                            format: '{value:%Y-%m-%d}',
+                                            /*
+                                             * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
+                                             * %Y  年回
+                                             * %m  月答
+                                             * %d  日
+                                             * %H  时
+                                             * %M  分
+                                             * %S  秒
+                                             */
+                                            /*  /*
+                                             formatter: function() {
+                                                 return Highcharts.dateFormat('%Y-%m-%d', this.value);
+                                             }
+                                             * / */
+                                        }
+                                    }
+                                }
+                            });
+                            Highcharts.stockChart(temp, {
+                                chart: {
+                                    zoomType: 'x',
+                                    selectionMarkerFill: 'rgba(0,0,0, 0.2)',
+                                    panning: true,
+                                    panKey: 'ctrl',
+                                    resetZoomButton: {
+                                        // 按钮定位
+                                        position: {
+                                            align: 'right', // by default
+                                            verticalAlign: 'top', // by default
+                                            x: 0,
+                                            y: -30
+                                        },
+                                        // 按钮样式
+                                        theme: {
+                                            fill: 'white',
+                                            stroke: 'silver',
+                                            r: 0,
+                                            states: {
+                                                hover: {
+                                                    fill: '#41739D',
+                                                    style: {
+                                                        color: 'white'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                title: {
+                                    text: '<b>设备编号：' + this.no + '  尺寸类型：' + json[1][j].size + '  单独值</b>'
+                                },
+                                subtitle: {
+                                    text: null
+                                },
+                                rangeSelector: {
+                                    buttons: [{
+                                        type: 'day',
+                                        count: 7,
+                                        text: '周'
+                                    }, {
+                                        type: 'month',
+                                        count: 1,
+                                        text: '月'
+                                    }, {
+                                        type: 'month',
+                                        count: 3,
+                                        text: '季度'
+                                    }, {
+                                        type: 'all',
+                                        text: '所有'
+                                    }],
+                                    selected: 3, // 默认选中的范围，值为上面 buttons 数组的下标（从 0 开始）
+                                    inputDateFormat: '%Y-%m-%d',
+                                    inputEditDateFormat: '%Y-%m-%d',
+                                },
+                                xAxis: {
+                                    labels: {
+                                        format: '{value:%Y-%m-%d }',
+                                        /*
+                                         * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
+                                         * %Y  年回
+                                         * %m  月答
+                                         * %d  日
+                                         * %H  时
+                                         * %M  分
+                                         * %S  秒
+                                         */
+                                        /*  /*
+                                         formatter: function() {
+                                             return Highcharts.dateFormat('%Y-%m-%d', this.value);
+                                         }
+                                         * / */
+                                    }
+                                },
+                                yAxis: {
+                                    title: {
+                                        text: "单独值"
+                                    },
+                                    plotLines: [{
+                                        color: 'red', //线的颜色，定义为红色
+                                        dashStyle: 'solid', //默认值，这里定义为实线
+                                        value: json[1][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                        width: 1.5, //标示线的宽度，2px
+                                        label: {
+                                            text: 'UCL',     //标签的内容
+                                            align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
+                                            x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+                                        }
+                                    }, {
+                                        color: 'red', //线的颜色，定义为红色
+                                        dashStyle: 'solid', //默认值，这里定义为实线
+                                        value: json[1][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                        width: 1.5, //标示线的宽度，2px
+                                        label: {
+                                            text: 'LCL',     //标签的内容
+                                            align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
+                                            x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+                                        }
+                                    }, {
+                                        color: 'blue', //线的颜色，定义为红色
+                                        dashStyle: 'solid', //默认值，这里定义为实线
+                                        value: json[1][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                        width: 1.5, //标示线的宽度，2px
+                                        label: {
+                                            text: '中心线',     //标签的内容
+                                            align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
+                                            x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+                                        }
+                                    },
+                                        {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[1][j].UCL - sigma_x * 1, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        }
+                                        ,
+                                        {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[1][j].UCL - sigma_x * 2, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        }, {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[1][j].UCL - sigma_x * 4, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        }, {
+                                            color: '#b3b15b', //线的颜色，定义为红色
+                                            dashStyle: 'Dash', //默认值，这里定义为实线
+                                            value: json[1][j].UCL - sigma_x * 5, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                                            width: 1, //标示线的宽度，2px
+                                        }
+
+                                    ],
+                                },
+                                tooltip: {
+                                    padding: 2,
+                                    useHTML: true,
+                                    backgroundColor: 'rgba(247,247,247,10)',
+                                    formatter: function () {
+                                        function timestampToTime(timestamp) {
+                                            var date = new Date(timestamp); //时间戳为10位需*1000，时间戳为13位的话不需乘1000
+                                            var Y = date.getFullYear() + '-';
+                                            var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date
+                                                .getMonth() + 1) + '-';
+                                            var D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
+                                            var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
+                                            var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) +
+                                                ':';
+                                            var s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
+                                            return Y + M + D + h + m + s;
+                                        }
+
+                                        //console.log(this)
+                                        if (this.points[0].point.name == '') {
+                                            this.points[0].point.name = '无'
+                                        }
+                                        if (this.points[0].point.method == '') {
+                                            this.points[0].point.method = '无'
+                                        }
+                                        let result = '<span>' + '时间: ' + '<b>' + timestampToTime(this.x) + '</b>' + '<br/>' +
+                                            this.points[0].series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
+                                            '图号: ' + '<b>' + this.points[0].point.part_no + '</b>' + '<br/>' +
+                                            '质量编号: ' + '<b>' + this.points[0].point.lot_no + '</b>' + '<br/>' +
+                                            '尺寸: ' + '<b>' + this.points[0].point.theory_val + '</b>' + '<br/>' +
+                                            '程序留余量: ' + '<b>' + this.points[0].point.p_left + '</b>' + '<br/>' +
+                                            '实测值: ' + '<b>' + this.points[0].point.measured_val + '</b>' + '<br/>' +
+                                            '操作者工号: ' + '<b>' + this.points[0].point.work_name + '</b>' + '<br/>' +
+                                            '测量时间: ' + '<b>' + this.points[0].point.measure_time + '</b>' + '<br/>' +
+                                            '加工z向补偿值: ' + '<b>' + this.points[0].point.z_compensate + '</b>' + '<br/>' +
+                                            '填写单位: ' + '<b>' + this.points[0].point.manufacturer + '</b>' + '<br/>' +
+                                            '件号: ' + '<b>' + this.points[0].point.part_no_number + '</b>' + '<br/>' +
+                                            '序号: ' + '<b>' + this.points[0].point.spec_no + '</b>' + '<br/>' +
+                                            '工艺员: ' + '<b>' + this.points[0].point.tech_oper + '</b>' + '<br/>' +
+                                            '工序号: ' + '<b>' + this.points[0].point.op_no + '</b>' + '<br/>' +
+                                            '公差带: ' + '<b>' + this.points[0].point.gcd + '</b>' + '<br/>' +
+                                            '材料: ' + '<b>' + this.points[0].point.material + '</b>' + '<br/>' +
+                                            '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>' +
+                                            '处理措施: ' + '<b>' + this.points[0].point.method + '</b>' + '</span>'
+                                        return result
+                                    }
+                                },
+                                plotOptions: {
+                                    line: {
+                                        dataLabels: {
+                                            // 开启数据标签
+                                            enabled: true,
+                                            useHTML: true,
+                                            formatter: function () {
+                                                return this.point.img
+                                            }
+                                        }
+                                        ,
+                                        // 关闭鼠标跟踪，对应的提示框、点击事件会失效
+                                        enableMouseTracking: true
+                                    }
+                                    ,
+                                    spline: {
+                                        marker: {
+                                            radius: 4,
+                                            lineColor: '#191970',
+                                            lineWidth: 10
+                                        }
+                                    },
+                                    series: {
+                                        marker: {
+                                            radius: 3,
+                                            enabled: true
+                                        }
+                                    }
+                                },
+                                series: [{
+                                    name: '移动极差R',
+                                    data: json[1][j].data,
+                                    lineWidth: 0.5,
+                                    marker: {
+                                        symbol: 'circle'
+                                    }
+                                }],
+                                credits: {
+                                    enabled: false // 禁用版权显示信息
+                                },
+                                navigator: {
+                                    xAxis: {
+                                        labels: {
+                                            format: '{value:%Y-%m-%d}',
+                                            /*
+                                             * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
+                                             * %Y  年回
+                                             * %m  月答
+                                             * %d  日
+                                             * %H  时
+                                             * %M  分
+                                             * %S  秒
+                                             */
+                                            /*  /*
+                                             formatter: function() {
+                                                 return Highcharts.dateFormat('%Y-%m-%d', this.value);
+                                             }
+                                             * / */
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        swal(res.data.msg);
+                        this.isShow = false;
+                    }
+                })
+            }
+
         }
     });
 
-    function huoqu() {
-        var no = document.getElementById('a').value;
-        // alert(no)
-        if (no == '') {
-            alert("请重新输入设备编号");
-        } else {
-            $.get('spc/getDevice?no=' + no, function (data) {
-                var json = eval(data);
-                console.log(json);
-                Highcharts.setOptions({
-                    // 所有语言文字相关配置都设置在 lang 里
-                    lang: {
-                        resetZoom: '恢复缩放',
-                        resetZoomTitle: '重置缩放比例',
-                        downloadPNG: '下载PNG文件',
-                        downloadJPEG: '下载JPE图片',
-                        downloadPDF: '下载PDF文件',
-                        downloadSVG: '下载SVG文件',
-                        loading: "加载中",
-                        rangeSelectorZoom: '<b>周期范围选择</b>'
-                    }
-                });
-                let html = "";
-                for (var i = 1; i <= json[0].length; i++) {
-                    var str = "container";
-                    tem = str + i;
-                    temp = tem + "x";
-                    html += "<div id=" + tem + " style=\'min-width:400px;height:650px\'></div><br><br>";
-                    html += "<div id=" + temp + " style=\'min-width:400px;height:650px\'></div><br><br>";
-                }
-                $("#container").html(html);
-                for (var i = 1; i <= json[0].length; i++) {
-                    var str = "container";
-                    tem = str + i;
-                    temp = tem + "x";
-                    console.log(tem);
-                    var j = i - 1;
-                    var sigma_r = (json[0][j].UCL - json[0][j].center) / 3;
-                    var sigma_x = (json[1][j].UCL - json[1][j].LCL) / 6;
-                    Highcharts.stockChart(tem, {
-                        chart: {
-                            zoomType: 'x',
-                            selectionMarkerFill: 'rgba(0,0,0, 0.2)',
-                            panning: true,
-                            panKey: 'ctrl',
-                            resetZoomButton: {
-                                // 按钮定位
-                                position: {
-                                    align: 'right', // by default
-                                    verticalAlign: 'top', // by default
-                                    x: 0,
-                                    y: -30
-                                },
-                                // 按钮样式
-                                theme: {
-                                    fill: 'white',
-                                    stroke: 'silver',
-                                    r: 0,
-                                    states: {
-                                        hover: {
-                                            fill: '#41739D',
-                                            style: {
-                                                color: 'white'
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        rangeSelector: {
-                            buttons: [{
-                                type: 'day',
-                                count: 7,
-                                text: '1 周'
-                            }, {
-                                type: 'month',
-                                count: 1,
-                                text: '月'
-                            }, {
-                                type: 'month',
-                                count: 3,
-                                text: '季度'
-                            }, {
-                                type: 'all',
-                                text: '所有'
-                            }],
-                            selected: 1, // 默认选中的范围，值为上面 buttons 数组的下标（从 0 开始）
-                            inputDateFormat: '%Y-%m-%d',
-                            inputEditDateFormat: '%Y-%m-%d',
-                        },
-                        title: {
-                            text: '<b>设备编号：' + no + '  尺寸类型：' + json[0][j].size + '  移动极差</b>'
-                        },
-                        subtitle: {
-                            text: null
-                        },
-                        xAxis: {
-                            labels: {
-                                format: '{value:%Y-%m-%d }',
-                                /*
-                                 * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
-                                 * %Y  年回
-                                 * %m  月答
-                                 * %d  日
-                                 * %H  时
-                                 * %M  分
-                                 * %S  秒
-                                 */
-                                /*  /*
-                                 formatter: function() {
-                                     return Highcharts.dateFormat('%Y-%m-%d', this.value);
-                                 }
-                                 * / */
-                            }
-                        },
-                        yAxis: {
-                            plotLines: [{
-                                color: 'red', //线的颜色，定义为红色
-                                dashStyle: 'solid', //默认值，这里定义为实线
-                                value: json[0][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1.5, //标示线的宽度，2px
-                                label: {
-                                    text: 'UCL',     //标签的内容
-                                    align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
-                                    x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
-                                }
-                            }, {
-                                color: 'red', //线的颜色，定义为红色
-                                dashStyle: 'solid', //默认值，这里定义为实线
-                                value: json[0][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1.5, //标示线的宽度，2px
-                                label: {
-                                    text: 'LCL',     //标签的内容
-                                    align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
-                                    x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
-                                }
-                            }, {
-                                color: 'blue', //线的颜色，定义为红色
-                                dashStyle: 'solid', //默认值，这里定义为实线
-                                value: json[0][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1.5, //标示线的宽度，2px
-                                label: {
-                                    text: '中心线',     //标签的内容
-                                    align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
-                                    x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
-                                }
-                            },
-                                {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[0][j].UCL - sigma_r * 1, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                },
-                                {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[0][j].UCL - sigma_r * 2, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                },
-                                {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[0][j].UCL - sigma_r * 4, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                }],
-                        },
-                        tooltip: {
-                            useHTML: true,
-                            formatter: function () {
-                                function timestampToTime(timestamp) {
-                                    var date = new Date(timestamp); //时间戳为10位需*1000，时间戳为13位的话不需乘1000
-                                    var Y = date.getFullYear() + '-';
-                                    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date
-                                        .getMonth() + 1) + '-';
-                                    var D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
-                                    var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
-                                    var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) +
-                                        ':';
-                                    var s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
-                                    return Y + M + D + h + m + s;
-                                }
-
-                                //console.log(this)
-                                if (this.points[0].point.name == '') {
-                                    this.points[0].point.name = '无'
-                                }
-                                if (this.points[0].point.method == '') {
-                                    this.points[0].point.method = '无'
-                                }
-
-                                return '时间: ' + '<b>' + timestampToTime(this.x) + '</b>' + '<br/>' +
-                                    this.points[0].series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
-                                    '图号: ' + '<b>' + this.points[0].point.part_no + '</b>' + '<br/>' +
-                                    '质量编号: ' + '<b>' + this.points[0].point.lot_no + '</b>' + '<br/>' +
-                                    '尺寸: ' + '<b>' + this.points[0].point.theory_val + '</b>' + '<br/>' +
-                                    '程序留余量: ' + '<b>' + this.points[0].point.p_left + '</b>' + '<br/>' +
-                                    '实测值: ' + '<b>' + this.points[0].point.measured_val + '</b>' + '<br/>' +
-                                    '操作者工号: ' + '<b>' + this.points[0].point.work_name + '</b>' + '<br/>' +
-                                    '测量时间: ' + '<b>' + this.points[0].point.measure_time + '</b>' + '<br/>' +
-                                    '加工z向补偿值: ' + '<b>' + this.points[0].point.z_compensate + '</b>' + '<br/>' +
-                                    '填写单位: ' + '<b>' + this.points[0].point.manufacturer + '</b>' + '<br/>' +
-                                    '件号: ' + '<b>' + this.points[0].point.part_no_number + '</b>' + '<br/>' +
-                                    '序号: ' + '<b>' + this.points[0].point.spec_no + '</b>' + '<br/>' +
-                                    '工艺员: ' + '<b>' + this.points[0].point.tech_oper + '</b>' + '<br/>' +
-                                    '工序号: ' + '<b>' + this.points[0].point.op_no + '</b>' + '<br/>' +
-                                    '公差带: ' + '<b>' + this.points[0].point.gcd + '</b>' + '<br/>' +
-                                    '材料: ' + '<b>' + this.points[0].point.material + '</b>' + '<br/>' +
-                                    '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>' +
-                                    '处理措施: ' + '<b>' + this.points[0].point.method + '</b>'
-                            }
-                        },
-                        plotOptions: {
-                            line: {
-                                dataLabels: {
-                                    // 开启数据标签
-                                    enabled: true,
-                                    useHTML: true,
-                                    formatter: function () {
-                                        return this.point.img
-                                    }
-                                },
-                                // 关闭鼠标跟踪，对应的提示框、点击事件会失效
-                                enableMouseTracking: true
-                            },
-                            spline: {
-                                marker: {
-                                    radius: 4,
-                                    lineColor: '#191970',
-                                    lineWidth: 10
-                                }
-                            },
-                            series: {
-                                marker: {
-                                    radius: 3,
-                                    enabled: true
-                                }
-                            }
-                        },
-                        series: [{
-                            name: '移动极差R',
-                            data: json[0][j].data,
-                            lineWidth: 0.5,
-                            marker: {
-                                symbol: 'circle'
-                            }
-                        }],
-                        credits: {
-                            enabled: false // 禁用版权显示信息
-                        },
-                        navigator: {
-                            xAxis: {
-                                labels: {
-                                    format: '{value:%Y-%m-%d}',
-                                    /*
-                                     * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
-                                     * %Y  年回
-                                     * %m  月答
-                                     * %d  日
-                                     * %H  时
-                                     * %M  分
-                                     * %S  秒
-                                     */
-                                    /*  /*
-                                     formatter: function() {
-                                         return Highcharts.dateFormat('%Y-%m-%d', this.value);
-                                     }
-                                     * / */
-                                }
-                            }
-                        }
-                    });
-                    Highcharts.stockChart(temp, {
-                        chart: {
-                            zoomType: 'x',
-                            selectionMarkerFill: 'rgba(0,0,0, 0.2)',
-                            panning: true,
-                            panKey: 'ctrl',
-                            resetZoomButton: {
-                                // 按钮定位
-                                position: {
-                                    align: 'right', // by default
-                                    verticalAlign: 'top', // by default
-                                    x: 0,
-                                    y: -30
-                                },
-                                // 按钮样式
-                                theme: {
-                                    fill: 'white',
-                                    stroke: 'silver',
-                                    r: 0,
-                                    states: {
-                                        hover: {
-                                            fill: '#41739D',
-                                            style: {
-                                                color: 'white'
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        title: {
-                            text: '<b>设备编号：' + no + '  尺寸类型：' + json[1][j].size + '  单独值</b>'
-                        },
-                        subtitle: {
-                            text: null
-                        },
-                        rangeSelector: {
-                            buttons: [{
-                                type: 'day',
-                                count: 7,
-                                text: '1 周'
-                            }, {
-                                type: 'month',
-                                count: 1,
-                                text: '月'
-                            }, {
-                                type: 'month',
-                                count: 3,
-                                text: '季度'
-                            }, {
-                                type: 'all',
-                                text: '所有'
-                            }],
-                            selected: 1, // 默认选中的范围，值为上面 buttons 数组的下标（从 0 开始）
-                            inputDateFormat: '%Y-%m-%d',
-                            inputEditDateFormat: '%Y-%m-%d',
-                        },
-                        xAxis: {
-                            labels: {
-                                format: '{value:%Y-%m-%d }',
-                                /*
-                                 * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
-                                 * %Y  年回
-                                 * %m  月答
-                                 * %d  日
-                                 * %H  时
-                                 * %M  分
-                                 * %S  秒
-                                 */
-                                /*  /*
-                                 formatter: function() {
-                                     return Highcharts.dateFormat('%Y-%m-%d', this.value);
-                                 }
-                                 * / */
-                            }
-                        },
-                        yAxis: {
-                            title: {
-                                text: "单独值"
-                            },
-                            plotLines: [{
-                                color: 'red', //线的颜色，定义为红色
-                                dashStyle: 'solid', //默认值，这里定义为实线
-                                value: json[1][j].UCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1.5, //标示线的宽度，2px
-                                label: {
-                                    text: 'UCL',     //标签的内容
-                                    align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
-                                    x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
-                                }
-                            }, {
-                                color: 'red', //线的颜色，定义为红色
-                                dashStyle: 'solid', //默认值，这里定义为实线
-                                value: json[1][j].LCL, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1.5, //标示线的宽度，2px
-                                label: {
-                                    text: 'LCL',     //标签的内容
-                                    align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
-                                    x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
-                                }
-                            }, {
-                                color: 'blue', //线的颜色，定义为红色
-                                dashStyle: 'solid', //默认值，这里定义为实线
-                                value: json[1][j].center, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                width: 1.5, //标示线的宽度，2px
-                                label: {
-                                    text: '中心线',     //标签的内容
-                                    align: 'left',                //标签的水平位置，水平居左,默认是水平居中center
-                                    x: 0                         //标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
-                                }
-                            },
-                                {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[1][j].UCL - sigma_x * 1, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                }
-                                ,
-                                {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[1][j].UCL - sigma_x * 2, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                }, {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[1][j].UCL - sigma_x * 4, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                }, {
-                                    color: '#b3b15b', //线的颜色，定义为红色
-                                    dashStyle: 'Dash', //默认值，这里定义为实线
-                                    value: json[1][j].UCL - sigma_x * 5, //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
-                                    width: 1, //标示线的宽度，2px
-                                }
-
-                            ],
-                        },
-                        tooltip: {
-                            useHTML: true,
-
-                            formatter: function () {
-                                function timestampToTime(timestamp) {
-                                    var date = new Date(timestamp); //时间戳为10位需*1000，时间戳为13位的话不需乘1000
-                                    var Y = date.getFullYear() + '-';
-                                    var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date
-                                        .getMonth() + 1) + '-';
-                                    var D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' ';
-                                    var h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
-                                    var m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) +
-                                        ':';
-                                    var s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
-                                    return Y + M + D + h + m + s;
-                                }
-
-                                //console.log(this)
-                                if (this.points[0].point.name == '') {
-                                    this.points[0].point.name = '无'
-                                }
-                                if (this.points[0].point.method == '') {
-                                    this.points[0].point.method = '无'
-                                }
-
-                                return '时间: ' + '<b>' + timestampToTime(this.x) + '</b>' + '<br/>' +
-                                    this.points[0].series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
-                                    '图号: ' + '<b>' + this.points[0].point.part_no + '</b>' + '<br/>' +
-                                    '质量编号: ' + '<b>' + this.points[0].point.lot_no + '</b>' + '<br/>' +
-                                    '尺寸: ' + '<b>' + this.points[0].point.theory_val + '</b>' + '<br/>' +
-                                    '程序留余量: ' + '<b>' + this.points[0].point.p_left + '</b>' + '<br/>' +
-                                    '实测值: ' + '<b>' + this.points[0].point.measured_val + '</b>' + '<br/>' +
-                                    '操作者工号: ' + '<b>' + this.points[0].point.work_name + '</b>' + '<br/>' +
-                                    '测量时间: ' + '<b>' + this.points[0].point.measure_time + '</b>' + '<br/>' +
-                                    '加工z向补偿值: ' + '<b>' + this.points[0].point.z_compensate + '</b>' + '<br/>' +
-                                    '填写单位: ' + '<b>' + this.points[0].point.manufacturer + '</b>' + '<br/>' +
-                                    '件号: ' + '<b>' + this.points[0].point.part_no_number + '</b>' + '<br/>' +
-                                    '序号: ' + '<b>' + this.points[0].point.spec_no + '</b>' + '<br/>' +
-                                    '工艺员: ' + '<b>' + this.points[0].point.tech_oper + '</b>' + '<br/>' +
-                                    '工序号: ' + '<b>' + this.points[0].point.op_no + '</b>' + '<br/>' +
-                                    '公差带: ' + '<b>' + this.points[0].point.gcd + '</b>' + '<br/>' +
-                                    '材料: ' + '<b>' + this.points[0].point.material + '</b>' + '<br/>' +
-                                    '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>' +
-                                    '处理措施: ' + '<b>' + this.points[0].point.method + '</b>'
-                            }
-                        },
-                        plotOptions: {
-                            line: {
-                                dataLabels: {
-                                    // 开启数据标签
-                                    enabled: true,
-                                    useHTML: true,
-                                    formatter: function () {
-                                        return this.point.img
-                                    }
-                                }
-                                ,
-                                // 关闭鼠标跟踪，对应的提示框、点击事件会失效
-                                enableMouseTracking: true
-                            }
-                            ,
-                            spline: {
-                                marker: {
-                                    radius: 4,
-                                    lineColor: '#191970',
-                                    lineWidth: 10
-                                }
-                            },
-                            series: {
-                                marker: {
-                                    radius: 3,
-                                    enabled: true
-                                }
-                            }
-                        },
-                        series: [{
-                            name: '移动极差R',
-                            data: json[1][j].data,
-                            lineWidth: 0.5,
-                            marker: {
-                                symbol: 'circle'
-                            }
-                        }],
-                        credits: {
-                            enabled: false // 禁用版权显示信息
-                        },
-                        navigator: {
-                            xAxis: {
-                                labels: {
-                                    format: '{value:%Y-%m-%d}',
-                                    /*
-                                     * 也可以bai用 formatter 格式du化函数zhi，时间格式化说dao明如下：
-                                     * %Y  年回
-                                     * %m  月答
-                                     * %d  日
-                                     * %H  时
-                                     * %M  分
-                                     * %S  秒
-                                     */
-                                    /*  /*
-                                     formatter: function() {
-                                         return Highcharts.dateFormat('%Y-%m-%d', this.value);
-                                     }
-                                     * / */
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-        }
-
-    }
-
-    // });
 </script>
 </body>
 
