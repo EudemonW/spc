@@ -43,7 +43,8 @@
         el: "#container",
         data: {
             no: "",
-            isShow: true
+            isShow: true,
+            html: ""
         },
         methods: {
             GetQueryValue1(queryName) {
@@ -59,7 +60,7 @@
         },
         created() {
             this.no = this.GetQueryValue1("no");
-            if (this.no == null||this.no == '') {
+            if (this.no == null || this.no == '') {
                 swal("请输入设备编号");
                 this.isShow = false;
             } else {
@@ -228,7 +229,7 @@
                                         }],
                                 },
                                 tooltip: {
-                                    padding: 1,
+                                    padding: 2,
                                     useHTML: true,
                                     backgroundColor: 'rgba(247,247,247,10)',
                                     formatter: function () {
@@ -282,7 +283,6 @@
                                             enabled: true,
                                             useHTML: true,
                                             zIndex: -1,
-                                            backgroundColor: 'rgba(252, 255, 197, 10)',
                                             formatter: function () {
                                                 return this.point.img
                                             }
