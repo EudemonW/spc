@@ -58,7 +58,7 @@ class spcSource(dbcommon):
         return self.mdb.readQuery(SQL)
 
     def getNameAndMethod(self, device_no, size_type):
-        SQL = "SELECT process_person,process_procedure FROM spc_source where device_no='{device_no}' " \
+        SQL = "SELECT process_person,process_procedure,process_time FROM spc_source where device_no='{device_no}' " \
               "and size_type = '{size_type}'".format(
             device_no=device_no, size_type=size_type)
         return self.mdb.readQuery(SQL)

@@ -8,8 +8,6 @@
     <script src="./asserts/jquery.min.js"></script>
     <script src="./asserts/code/highstock.js"></script>
     <script src="./asserts/code/modules/exporting.js"></script>
-    <link rel="stylesheet" type="text/css" href="./asserts/sweetalert.css">
-    <script src="./asserts/sweetalert-dev.js"></script>
     <style>
         .table-cell {
             margin-left: 50%;
@@ -38,6 +36,9 @@
 <!--引入vue和axios文件-->
 <script src="./asserts/vue.js"></script>
 <script src="./asserts/axios.min.js"></script>
+<!--引入elementui js和css文件-->
+<script src="./asserts/elementui/element/index.js"></script>
+<link rel="stylesheet" href="./asserts/elementui/element/index.css">
 <script>
     const app = new Vue({
         el: "#container",
@@ -56,12 +57,23 @@
                 } else {
                     return null;
                 }
+            },
+            open(msg, title) {
+                this.$alert(msg, title, {
+                    confirmButtonText: '确定',
+                    // callback: action => {
+                    //     this.$message({
+                    //         type: 'info',
+                    //         // message: `action: ${action}`
+                    //     });
+                    // }
+                });
             }
         },
         created() {
             this.no = this.GetQueryValue1("no");
             if (this.no == null || this.no == '') {
-                swal("请输入设备编号");
+                this.open("请输入设备编号", "提示");
                 this.isShow = false;
             } else {
                 axios.get(`spc/getDevice?no=${this.no}`).then(res => {
@@ -247,13 +259,18 @@
                                             return Y + M + D + h + m + s;
                                         }
 
-                                        let name = '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>';
-                                        if (this.points[0].point.name == '') {
+                                         let name = '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>';
+                                        if (this.points[0].point.name == ''||this.points[0].point.name==null) {
                                             name = '';
                                         }
-                                        let method = '处理人: ' + '<b>' + this.points[0].point.method + '</b>';
-                                        if (this.points[0].point.method == '') {
+                                        let method = '处理措施: ' + '<b>' + this.points[0].point.method + '</b>' + '<br/>';
+                                        if (this.points[0].point.method == ''||this.points[0].point.method == null) {
                                             method = '';
+                                        }
+                                        time = timestampToTime(this.points[0].point.process_time);
+                                        let process_time = '处理时间: ' + '<b>' + time + '</b>';
+                                        if (this.points[0].point.process_time == ''||this.points[0].point.process_time == null) {
+                                            process_time = '';
                                         }
 
                                         return '<div class="tooltip">' + '<span>' + '时间: ' + '<b>' + timestampToTime(this.x) + '</b>' + '<br/>' +
@@ -273,7 +290,7 @@
                                             '工序号: ' + '<b>' + this.points[0].point.op_no + '</b>' + '<br/>' +
                                             '公差带: ' + '<b>' + this.points[0].point.gcd + '</b>' + '<br/>' +
                                             '材料: ' + '<b>' + this.points[0].point.material + '</b>' + '<br/>' +
-                                            name + method + '</span>' + '</div>';
+                                            name + method + process_time + '</span>' + '</div>';
                                     }
                                 },
                                 plotOptions: {
@@ -283,6 +300,7 @@
                                             enabled: true,
                                             useHTML: true,
                                             zIndex: -1,
+                                            y: 5,
                                             formatter: function () {
                                                 return this.point.img
                                             }
@@ -493,11 +511,19 @@
                                         }
 
                                         //console.log(this)
-                                        if (this.points[0].point.name == '') {
-                                            this.points[0].point.name = '无'
+                                        let name = '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>';
+                                        if (this.points[0].point.name == ''||this.points[0].point.name==null) {
+                                            name = '';
                                         }
-                                        if (this.points[0].point.method == '') {
-                                            this.points[0].point.method = '无'
+                                        let method = '处理措施: ' + '<b>' + this.points[0].point.method + '</b>' + '<br/>';
+                                        if (this.points[0].point.method == ''||this.points[0].point.method == null) {
+                                            method = '';
+                                        }
+                                        let process_time = '处理时间: ' + '<b>' + this.points[0].point.process_time + '</b>';
+                                        if (this.points[0].point.process_time == ''||this.points[0].point.process_time ==null) {
+                                            process_time = '';
+                                        } else {
+                                            this.points[0].point.process_time = timestampToTime(this.points[0].point.process_time)
                                         }
                                         let result = '<span>' + '时间: ' + '<b>' + timestampToTime(this.x) + '</b>' + '<br/>' +
                                             this.points[0].series.name + ': ' + '<b>' + this.y + '</b>' + '<br/>' +
@@ -516,8 +542,7 @@
                                             '工序号: ' + '<b>' + this.points[0].point.op_no + '</b>' + '<br/>' +
                                             '公差带: ' + '<b>' + this.points[0].point.gcd + '</b>' + '<br/>' +
                                             '材料: ' + '<b>' + this.points[0].point.material + '</b>' + '<br/>' +
-                                            '处理人: ' + '<b>' + this.points[0].point.name + '</b>' + '<br/>' +
-                                            '处理措施: ' + '<b>' + this.points[0].point.method + '</b>' + '</span>'
+                                             name+method+process_time + '</span>'
                                         return result
                                     }
                                 },
@@ -527,6 +552,7 @@
                                             // 开启数据标签
                                             enabled: true,
                                             useHTML: true,
+                                            y: 5,
                                             formatter: function () {
                                                 return this.point.img
                                             }
@@ -585,7 +611,7 @@
                             });
                         }
                     } else {
-                        swal(res.data.msg);
+                        this.open("设备编号有误，请重新输入", "提示");
                         this.isShow = false;
                     }
                 })

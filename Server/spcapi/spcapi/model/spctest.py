@@ -288,19 +288,20 @@ def add_color(df,color):
 
 def add_img(df):
     df["img"] = ''
-    df.loc[df[df['prob1'] == 1].index, "img"] = "<img src= './asserts/img/1.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob2'] == 1].index, "img"] = "<img src= './asserts/img/2.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob3'] == 1].index, "img"] = "<img src= './asserts/img/3.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob4'] == 1].index, "img"] = "<img src= './asserts/img/4.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob5'] == 1].index, "img"] = "<img src= './asserts/img/5.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob6'] == 1].index, "img"] = "<img src= './asserts/img/6.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob7'] == 1].index, "img"] = "<img src= './asserts/img/7.jpg'  style='width:20px;height:25px'>"
-    df.loc[df[df['prob8'] == 1].index, "img"] = "<img src= './asserts/img/8.jpg'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob1'] == 1].index, "img"] = "<img src= './asserts/img/1.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob2'] == 1].index, "img"] = "<img src= './asserts/img/2.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob3'] == 1].index, "img"] = "<img src= './asserts/img/3.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob4'] == 1].index, "img"] = "<img src= './asserts/img/4.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob5'] == 1].index, "img"] = "<img src= './asserts/img/5.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob6'] == 1].index, "img"] = "<img src= './asserts/img/6.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob7'] == 1].index, "img"] = "<img src= './asserts/img/7.png'  style='width:20px;height:25px'>"
+    df.loc[df[df['prob8'] == 1].index, "img"] = "<img src= './asserts/img/8.png'  style='width:20px;height:25px'>"
 
 def add_name(df,device_no,size_type):
     result = spcSource().getNameAndMethod(device_no,size_type)
     df['name'] = result['process_person']
     df['method'] = result['process_procedure']
+    df['process_time'] = result['process_time']
 
 
 def get_data(df, device_no):

@@ -53,6 +53,7 @@ class api():
             jsonData = f.read()
             result["success"] = True
             result["data"] = jsonData
+            print(result)
             f.close()
         except:
             df = spcSource().getList(no)

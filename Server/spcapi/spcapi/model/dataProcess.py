@@ -25,6 +25,7 @@ def dataProcess(dlist,R_X,value,ucl,lcl,center):
             temp1['img'] = getattr(item, 'img')
             temp1['name'] = getattr(item, 'name')
             temp1['method'] = getattr(item, 'method')
+            temp1['process_time'] = getattr(item, 'process_time')
             temp1['part_no'] = getattr(item, 'part_no')
             temp1['lot_no'] = getattr(item, 'lot_no')
             temp1['theory_val'] = getattr(item, 'theory_val')
