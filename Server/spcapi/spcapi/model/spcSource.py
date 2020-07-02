@@ -1,6 +1,6 @@
 from time import time
 
-from Server.spcapi.spcapi.model.dbcommon import dbcommon
+from spcapi.model.dbcommon import dbcommon
 
 
 class spcSource(dbcommon):
@@ -33,10 +33,11 @@ class spcSource(dbcommon):
         self.mdb.execute(SQL)
 
     def saveUpd(self, data):
-        SQL = "UPDATE  `spc_source` SET `process_person`='{process_person}',`process_procedure`='{process_procedure}',`process_time`='{process_time}'" \
-              " WHERE `device_no`='{device_no}' and `timestamp`='{timestamp}';" \
+        SQL = "UPDATE  `spc_source` SET `process_person`='{process_person}',`x_r`='{x_r}'," \
+              "`process_procedure`='{process_procedure}',`process_time`='{process_time}'" \
+              " WHERE `timestamp`='{timestamp}';" \
             .format(process_person=data["process_person"], process_procedure=data["process_procedure"],
-                    process_time=data["process_time"], device_no=data["device_no"], timestamp=data["timestamp"])
+                    process_time=data["process_time"], x_r=data['x_r'] ,timestamp=data["timestamp"])
         self.mdb.execute(SQL)
 
     def getList(self, no):

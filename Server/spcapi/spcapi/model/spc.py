@@ -1,4 +1,5 @@
 import os
+import time
 
 import pandas as pd
 import numpy as np
@@ -9,19 +10,30 @@ warnings.filterwarnings("ignore")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime
-plt.rcParams['axes.unicode_minus'] = False   #解决负号不显示的问题
+
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号不显示的问题
+
+
 # plt.rcParams['font.SimHei'] = ['SimHei']  #显示中文
 
 
-def create(df,device_no):
-    df['timestamp'] = df['timestamp'].map(lambda x: str(datetime.datetime.fromtimestamp(x)))  # 将时间戳转换为datetime库的时间
-    df['timestamp'] = df['timestamp'].map(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))  # 将时间转换为strptime格式
-    df['timestamp'] = df['timestamp'].map(lambda x: mdates.date2num(x))
+def create(df, device_no):
+    # df['measure_time'] = df['measure_time'].map(lambda x: time.strftime("%Y-%m-%d %H:%M:%S",x))  # 将时间戳转换为datetime库的时间
+    # df['timestamp'] = df['timestamp'].map(
+    #     lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))  # 将时间转换为strptime格式
+    # df['timestamp'] = df['timestamp'].map(lambda x: mdates.date2num(x))
+    # df['timestamp'] = df['timestamp']*1000
+
+    # 将字符串日期形式转换为时间戳
+    df['measure_time'] = df['measure_time'].map(lambda x: int(time.mktime(time.strptime(x, "%Y-%m-%d %H:%M:%S"))))
+    df['measure_time'] = df['measure_time']*1000
     df['change_val_shift'] = df['change_val'].shift(1)
     df['R'] = df['change_val_shift'] - df['change_val']
     df['R'] = df['R'].map(lambda x: np.abs(x))
     df = df.drop('change_val_shift', axis=1)
-    get_fig(df, device_no)
+    dlist = get_data(df, device_no)
+    return dlist
+
 
 def judge_value(a):  # 判断df一行中的第3至最后一个值是否相同
     val = a[2]
@@ -34,6 +46,7 @@ def judge_value(a):  # 判断df一行中的第3至最后一个值是否相同
     else:
         return False
 
+
 def get_no(df_prob, p, no_columns_name):  # 根据问题点的index2筛选出问题点及后面p个点的prob_point
     prob_index = df_prob[df_prob.apply(judge_value, axis=1)].index
     prob_index_list = []
@@ -45,6 +58,7 @@ def get_no(df_prob, p, no_columns_name):  # 根据问题点的index2筛选出问
         [str(x) for x in df_prob.loc[dup_prob_index_list][no_columns_name]])  # 根据index2筛选出prob_point，并转换成字符串
     return prob_nos
 
+
 def bigorsmall(b):  # 判断是否大于0,并返回1，-1和0
     if b > 0:
         return 1
@@ -52,6 +66,7 @@ def bigorsmall(b):  # 判断是否大于0,并返回1，-1和0
         return -1
     elif b == 0:
         return 0
+
 
 def checkjiaocha(a):  # 检查df中每行第5至17个值是否交替上下
     val = a[4]
@@ -65,6 +80,7 @@ def checkjiaocha(a):  # 检查df中每行第5至17个值是否交替上下
     else:
         return False
 
+
 def prob5_detect(df_prob5t, df_part, no_columns_name):  # 问题5检测
     df_prob5t["index2"] = df_prob5t.index
     df_prob5t["index_shift"] = df_prob5t["index2"].shift(1)
@@ -76,6 +92,7 @@ def prob5_detect(df_prob5t, df_part, no_columns_name):  # 问题5检测
     a_l.extend(b_l)
     c_l = df_part.loc[a_l][no_columns_name].to_list()
     return a_l
+
 
 def prob6_detect(df_prob6_s, df_part, no_columns_name):
     df_prob6_s["index2"] = df_prob6_s.index
@@ -90,8 +107,9 @@ def prob6_detect(df_prob6_s, df_part, no_columns_name):
     prob6_nos1 = df_part.loc[prob6_indexl][no_columns_name].to_list()
     return prob6_nos1
 
-def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
-    count = df_part.shape(0)
+
+def prob_detection(df_part, column_name, no_columns_name, UCL, LCL, center):
+    count = df_part.shape[0]
     df_prob = pd.DataFrame(columns=["prob_code", "prob_desc", "prob_points"])
     # 问题1判断 一个点落在a区之外
     df_prob1 = df_part[(df_part[column_name] < LCL) | (df_part[column_name] > UCL)]  # 筛选出异常点
@@ -102,11 +120,11 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
             ignore_index=True)
 
     # 问题2判断 连续9点落在中心线同一侧
-    if count>=9:
+    if count >= 9:
         df_prob2 = pd.DataFrame()
         df_prob2[no_columns_name] = df_part[no_columns_name]
         df_prob2[column_name] = df_part[column_name]
-        df_prob2['shift_R_mp1'] = (df_part[column_name] > df_part[column_name].mean()).astype(int)  # 判断是否大于均值并返回0和1
+        df_prob2['shift_R_mp1'] = (df_part[column_name] > center).astype(int)  # 判断是否大于均值并返回0和1
         for i in range(2, 10):  # 移位建立新列
             shift_column_name = "shift_R_mp" + str(i)
             df_prob2[shift_column_name] = df_prob2['shift_R_mp1'].shift(-i + 1)
@@ -117,7 +135,7 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob2_nos}], ignore_index=True)
 
     # 问题3判断  连续6点递增或递减（测试5点和6点）
-    if count>=6:
+    if count >= 6:
         df_prob3 = pd.DataFrame()
         df_prob3[no_columns_name] = df_part[no_columns_name]
         df_prob3[column_name] = df_part[column_name]
@@ -134,7 +152,7 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob3_nos}], ignore_index=True)
 
     # 问题4判断  连续14个点交替上下
-    if count>=14:
+    if count >= 14:
         df_prob4 = pd.DataFrame()
         df_prob4[no_columns_name] = df_part[no_columns_name]
         df_prob4[column_name] = df_part[column_name]
@@ -157,12 +175,12 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob4_nos}], ignore_index=True)
 
     # 问题5判断 3点中有2点落在中心线同一侧的B区以外
-    if count>=3:
+    if count >= 3:
         df_prob5 = pd.DataFrame()
         df_prob5[no_columns_name] = df_part[no_columns_name]
         df_prob5[column_name] = df_part[column_name]
-        upper = UCL - (UCL - df_part[column_name].mean()) / 3
-        lower = UCL - ((UCL - df_part[column_name].mean()) / 3) * 5
+        upper = UCL - (UCL - center) / 3
+        lower = UCL - ((UCL - center) / 3) * 5
         df_prob5t = df_prob5[df_prob5[column_name] > upper]
         prob5_nos1 = prob5_detect(df_prob5t, df_part, no_columns_name)
         df_prob5b = df_prob5[df_prob5[column_name] < lower]
@@ -177,9 +195,9 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob5_nos}], ignore_index=True)
 
     # 问题6判断 连续5点中有4点落在中心线同一侧的C区以外
-    if count>=5:
-        upper6 = UCL - ((UCL - df_part[column_name].mean()) / 3) * 2
-        lower6 = UCL - ((UCL - df_part[column_name].mean()) / 3) * 4
+    if count >= 5:
+        upper6 = UCL - ((UCL - center) / 3) * 2
+        lower6 = UCL - ((UCL - center) / 3) * 4
         df_prob6 = pd.DataFrame()
         df_prob6[no_columns_name] = df_part[no_columns_name]
         df_prob6[column_name] = df_part[column_name]
@@ -197,9 +215,9 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob6_nos}], ignore_index=True)
 
     # 问题7判断 连续15点落在中心线两侧的C区内
-    if count>=15:
-        upper7 = UCL - ((UCL - df_part[column_name].mean()) / 3) * 2
-        lower7 = UCL - ((UCL - df_part[column_name].mean()) / 3) * 4
+    if count >= 15:
+        upper7 = UCL - ((UCL - center) / 3) * 2
+        lower7 = UCL - ((UCL - center) / 3) * 4
         df_prob7 = pd.DataFrame()
         df_prob7[no_columns_name] = df_part[no_columns_name]
         df_prob7[column_name] = df_part[column_name]
@@ -220,9 +238,9 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob7_nos}], ignore_index=True)
 
     # 问题8判断  连续8点落在中心线两侧，且无一在C区内
-    if count>=8:
-        upper8 = UCL - ((UCL - df_part[column_name].mean()) / 3) * 2
-        lower8 = UCL - ((UCL - df_part[column_name].mean()) / 3) * 4
+    if count >= 8:
+        upper8 = UCL - ((UCL - center) / 3) * 2
+        lower8 = UCL - ((UCL - center) / 3) * 4
         df_prob8 = pd.DataFrame()
         df_prob8[no_columns_name] = df_part[no_columns_name]
         df_prob8[column_name] = df_part[column_name]
@@ -243,6 +261,7 @@ def prob_detection(df_part, column_name, no_columns_name, UCL, LCL):
                                        "prob_points": prob8_nos}], ignore_index=True)
     return df_prob
 
+
 def prob_columns(df, R_prob):  # 将问题类型添加到原表后面
     for k in range(1, 9):  # 先8个问题列设置为默认为“0”
         prob_columnname = "prob" + str(k)
@@ -262,134 +281,122 @@ def prob_columns(df, R_prob):  # 将问题类型添加到原表后面
                 if k in [int(x) for x in prob_codes]:
                     df.iloc[l, k - 9] = 1
 
-def get_fig(df, device_no):
-    df0 = df[df['device_no'] == device_no]
-    size_type_list = df['size_type'].unique().tolist()
-    num_size_type = len(size_type_list)
-    plt.figure(figsize=(24, 12))
-    d2 = 1.128  # 查表得
-    E2 = 3 / d2
-    D3 = 0.000  # 查表得
-    D4 = 3.267  # 查表得
+def add_color(df,color):
+    df["color"] = color
+    df.loc[df[df['prob2'] == 1].index, "color"] = "green"
+    df.loc[df[df['prob7'] == 1].index, "color"] = "yellow"
+    df.loc[df[df['prob1'] == 1].index, "color"] = "red"
+    df.loc[df[df['prob3'] == 1].index, "color"] = "red"
+    df.loc[df[df['prob4'] == 1].index, "color"] = "red"
+    df.loc[df[df['prob5'] == 1].index, "color"] = "red"
+    df.loc[df[df['prob6'] == 1].index, "color"] = "red"
+    df.loc[df[df['prob8'] == 1].index, "color"] = "red"
 
+def add_img(df):
+    df["type"] = ''
+    df.loc[df[df['prob2'] == 1].index, "type"] = "2"
+    df.loc[df[df['prob7'] == 1].index, "type"] = "7"
+    df.loc[df[df['prob1'] == 1].index, "type"] = "1"
+    df.loc[df[df['prob3'] == 1].index, "type"] = "3"
+    df.loc[df[df['prob4'] == 1].index, "type"] = "4"
+    df.loc[df[df['prob5'] == 1].index, "type"] = "5"
+    df.loc[df[df['prob6'] == 1].index, "type"] = "6"
+    df.loc[df[df['prob8'] == 1].index, "type"] = "8"
+
+def add_name(df,device_no,size_type):
+    result = spcSource().getNameAndMethod(device_no,size_type)
+    df['name'] = result['process_person']
+    df['method'] = result['process_procedure']
+    df['process_time'] = result['process_time']
+
+
+def get_data(df, device_no):
+    # df0 = df[df['device_no'] == device_no]
+    size_type_list = df['size_type'].unique().tolist()
+    # print(size_type_list)
+    # num_size_type = len(size_type_list)
+    # d2 = 1.128  # 查表得
+    # E2 = 3 / d2
+    # D3 = 0.000  # 查表得
+    # D4 = 3.267  # 查表得
+    data = []
     for size_type in size_type_list:
-        i = 1
-        plt.clf()
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # 画移动极差的图
         df1 = df[df['size_type'] == size_type].reset_index()
         df2 = df[df['size_type'] == size_type].reset_index()
-        x_max = max(df1['timestamp'])
-        x_min = min(df1['timestamp'])
+        # x_max = max(df1['timestamp'])
+        # x_min = min(df1['timestamp'])
 
-        R_ = df1['R'].mean()
+        # R_ = df1['R'].mean()
 
-        UCL = D4 * R_
-        LCL = D3 * R_
+        # UCL = D4 * R_
+        # LCL = D3 * R_
         # UCL =
-        sigma = (UCL - R_) / 3
+        # sigma = (UCL - R_) / 3
 
-        prob_demo = prob_detection(df1, "R", "index", UCL, LCL)
-        prob_columns(df1, prob_demo)
-        df1_prob1 = df1[df1['prob1'] == 1]
-        df1_prob2 = df1[df1['prob2'] == 1]
-        df1_prob3 = df1[df1['prob3'] == 1]
-        df1_prob4 = df1[df1['prob4'] == 1]
-        df1_prob5 = df1[df1['prob5'] == 1]
-        df1_prob6 = df1[df1['prob6'] == 1]
-        df1_prob7 = df1[df1['prob7'] == 1]
-        df1_prob8 = df1[df1['prob8'] == 1]
+        # 找出上下限和中心值
+        result = spcSource().getUpAndDown(device_no, size_type)
+        UCL = result['control_up'][0]
+        LCL = result['control_down'][0]
+        center = result['control_center'][0]
+        R_UCL = result['r_contro_up'][0]
+        R_LCL = result['r_contro_down'][0]
+        R_center = result['r_contro_center'][0]
 
-        ax = plt.subplot(1, 2, i)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d %H:%M:%S'))
-        ax.hlines(UCL, xmin=x_min, xmax=x_max, colors="r")
-        ax.hlines(LCL, xmin=x_min, xmax=x_max, colors="r")
-        ax.hlines(R_, xmin=x_min, xmax=x_max, colors="b")
-        ax.hlines((UCL - sigma * 1), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.hlines((UCL - sigma * 2), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.hlines((UCL - sigma * 4), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.plot(df1['timestamp'], df1["R"], color="grey", label="移动极差")
-        ax.scatter(df1_prob1['timestamp'], df1_prob1["R"], color="red", marker='x', alpha=0.9, label="问题一")
-        ax.scatter(df1_prob2['timestamp'], df1_prob2["R"], color="blue", marker='o', alpha=0.9, label="问题二")
-        ax.scatter(df1_prob3['timestamp'], df1_prob3["R"], color="yellow", marker='o', alpha=0.9, label="问题三")
-        ax.scatter(df1_prob4['timestamp'], df1_prob4["R"], color="green", marker='o', alpha=0.9, label="问题四")
-        ax.scatter(df1_prob5['timestamp'], df1_prob5["R"], color="black", marker='x', alpha=0.9, label="问题五")
-        ax.scatter(df1_prob6['timestamp'], df1_prob6["R"], color="orange", marker='x', alpha=0.9, label="问题六")
-        ax.scatter(df1_prob7['timestamp'], df1_prob7["R"], color="pink", marker='x', alpha=0.9, label="问题七")
-        ax.scatter(df1_prob8['timestamp'], df1_prob8["R"], color="red", marker='o', alpha=0.9, label="问题八")
-        plt.ylabel("移动极差R", fontsize=20)
-        ax.text(x_max, UCL, "UCL", fontsize=15)
-        ax.text(x_max, LCL, "LCL", fontsize=15)
-        ax.text(x_max, R_, "中心线", fontsize=15)
-        ax.text(x_min, UCL - sigma * 0.5, "A", fontsize=20)
-        ax.text(x_min, UCL - sigma * 1.5, "B", fontsize=20)
-        ax.text(x_min, UCL - sigma * 2.5, "C", fontsize=20)
-        ax.text(x_min, UCL - sigma * 3.5, "C", fontsize=20)
-        ax.text(x_min, UCL - sigma * 4.5, "B", fontsize=20)
-        plt.legend()
-        plt.xlim(x_min, x_max)
-        plt.title("设备编号{device_no},尺寸类别{size_type},移动极差".format(device_no=device_no, size_type=size_type),
-                  fontsize=20)
-        i += 1
+        if UCL!=None and UCL!='':
+            # 故障类型判断
+            prob_demo_r = prob_detection(df1, "R", "index", R_UCL, R_LCL, R_center)  # 移动极差
+            prob_demo_x = prob_detection(df2, "change_val", "index", UCL, LCL, center)  # 转换值
+            prob_columns(df1, prob_demo_r)
+            prob_columns(df2, prob_demo_x)
 
-        # 以下画转换值的图
+            df_r = df1
+            df_x = df2
 
-        x_max = max(df2['timestamp'])
-        x_min = min(df2['timestamp'])
+            # 增加颜色属性
+            add_color(df_r,'black')
+            add_color(df_x,'black')
 
-        R_ = df2['R'].mean()
-        X_ = df2["change_val"].mean()
-        UCLx = X_ + df2.iloc[-1, :]['control_up']
-        LCLx = X_ - df2.iloc[-1, :]['control_down']
-        sigmax = (UCLx - LCLx) / 6
+            #增加姓名和处理措施
+            add_name(df_r,device_no,size_type)
+            add_name(df_x,device_no,size_type)
 
-        prob_demo = prob_detection(df2, "change_val", "index", UCLx, LCLx)
-        prob_columns(df2, prob_demo)
-        df1_prob1 = df2[df2['prob1'] == 1]
-        df1_prob2 = df2[df2['prob2'] == 1]
-        df1_prob3 = df2[df2['prob3'] == 1]
-        df1_prob4 = df2[df2['prob4'] == 1]
-        df1_prob5 = df2[df2['prob5'] == 1]
-        df1_prob6 = df2[df2['prob6'] == 1]
-        df1_prob7 = df2[df2['prob7'] == 1]
-        df1_prob8 = df2[df2['prob8'] == 1]
+            # 增加图片显示属性
+            add_img(df_r)
+            add_img(df_x)
 
-        ax = plt.subplot(1, 2, i)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d %H:%M:%S'))
-        ax.hlines(UCLx, xmin=x_min, xmax=x_max, colors="r")
-        ax.hlines(LCLx, xmin=x_min, xmax=x_max, colors="r")
-        ax.hlines(X_, xmin=x_min, xmax=x_max, colors="b")
-        ax.hlines((UCLx - sigmax * 1), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.hlines((UCLx - sigmax * 2), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.hlines((UCLx - sigmax * 4), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.hlines((UCLx - sigmax * 5), xmin=x_min, xmax=x_max, linestyle="--", colors="y", alpha=0.5)
-        ax.plot(df1['timestamp'], df1["change_val"], color="grey", label="转换值")
-        ax.scatter(df1_prob1['timestamp'], df1_prob1["change_val"], color="red", marker='x', alpha=0.9, label="问题一")
-        ax.scatter(df1_prob2['timestamp'], df1_prob2["change_val"], color="blue", marker='o', alpha=0.9,
-                   label="问题二")
-        ax.scatter(df1_prob3['timestamp'], df1_prob3["change_val"], color="yellow", marker='o', alpha=0.9,
-                   label="问题三")
-        ax.scatter(df1_prob4['timestamp'], df1_prob4["change_val"], color="green", marker='o', alpha=0.9,
-                   label="问题四")
-        ax.scatter(df1_prob5['timestamp'], df1_prob5["change_val"], color="black", marker='x', alpha=0.9,
-                   label="问题五")
-        ax.scatter(df1_prob6['timestamp'], df1_prob6["change_val"], color="orange", marker='x', alpha=0.9,
-                   label="问题六")
-        ax.scatter(df1_prob7['timestamp'], df1_prob7["change_val"], color="pink", marker='x', alpha=0.9,
-                   label="问题七")
-        ax.scatter(df1_prob8['timestamp'], df1_prob8["change_val"], color="red", marker='o', alpha=0.9, label="问题八")
-        plt.ylabel("转换值X", fontsize=20)
-        ax.text(x_max, UCLx, "UCL", fontsize=15)
-        ax.text(x_max, LCLx, "LCL", fontsize=15)
-        ax.text(x_max, X_, "中心线", fontsize=15)
-        ax.text(x_min, UCLx - sigmax * 0.5, "A", fontsize=20)
-        ax.text(x_min, UCLx - sigmax * 1.5, "B", fontsize=20)
-        ax.text(x_min, UCLx - sigmax * 2.5, "C", fontsize=20)
-        ax.text(x_min, UCLx - sigmax * 3.5, "C", fontsize=20)
-        ax.text(x_min, UCLx - sigmax * 4.5, "B", fontsize=20)
-        ax.text(x_min, UCLx - sigmax * 5.5, "A", fontsize=20)
-        plt.xlim(x_min, x_max)
-        plt.legend()
-        plt.title("设备编号{device_no},尺寸类别{size_type},转换值".format(device_no=device_no, size_type=size_type),
-                  fontsize=20)
-        plt.savefig(base_dir+"/static/{device_no}_{size_type}.png".format(device_no=device_no,size_type=size_type))
+            dir = {}
+            dir['X'] = df_x
+            dir['R'] = df_r
+            dir['UCL'] = UCL
+            dir['LCL'] = LCL
+            dir['center'] = center
+            dir['R_UCL'] = R_UCL
+            dir['R_LCL'] = R_LCL
+            dir['R_center'] = R_center
+            dir['size_type'] = size_type
+            data.append(dir)
+        else:
+            df2["color"] = 'black'
+            df1["color"] = 'black'
+            dir = {}
+            dir['X'] = df2
+            dir['R'] = df1
+            dir['UCL'] = None
+            dir['LCL'] = None
+            dir['center'] = None
+            dir['R_UCL'] = None
+            dir['R_LCL'] = None
+            dir['R_center'] = None
+            dir['size_type'] = size_type
+            data.append(dir)
+    # print(data)
+    return data
+
+    # df1_prob1 = df1[df1['prob1'] == 1]
+    # df1_prob2 = df1[df1['prob2'] == 1]
+    # df1_prob3 = df1[df1['prob3'] == 1]
+    # df1_prob4 = df1[df1['prob4'] == 1]
+    # df1_prob5 = df1[df1['prob5'] == 1]
+    # df1_prob6 = df1[df1['prob6'] == 1]
+    # df1_prob7 = df1[df1['prob7'] == 1]
+    # df1_prob8 = df1[df1['prob8'] == 1]
